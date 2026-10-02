@@ -124,6 +124,28 @@
     word-break: break-word;
   }
   .hidden { display: none; }
+  .ligne-form { display: flex; gap: 8px; }
+  .ligne-form input {
+    flex: 1;
+    min-width: 0;
+    padding: 10px 12px;
+    font-size: 1rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg);
+    color: var(--text);
+  }
+  .ligne-form button {
+    padding: 10px 16px;
+    font-size: 1rem;
+    border: none;
+    border-radius: 8px;
+    background: var(--accent);
+    color: #fff;
+    cursor: pointer;
+  }
+  .ligne-form button:disabled { opacity: 0.6; }
+  .erreur { color: var(--warn); font-size: 0.9rem; }
   footer { text-align: center; color: var(--muted); font-size: 0.8rem; padding-bottom: 24px; }
 </style>
 </head>
@@ -136,7 +158,7 @@
 
 <nav>
   <button class="active" data-tool="exif">📷 Photo</button>
-  <button disabled title="Bientôt">🌐 Domaine</button>
+  <button data-tool="domaine">🌐 Domaine</button>
   <button disabled title="Bientôt">👤 Pseudo</button>
   <button disabled title="Bientôt">🖼️ Image inversée</button>
   <button disabled title="Bientôt">🕰️ Archives</button>
@@ -163,6 +185,35 @@
           <summary>Toutes les métadonnées brutes</summary>
           <pre id="raw"></pre>
         </details>
+      </div>
+    </div>
+  </section>
+
+  <section id="tool-domaine" class="hidden">
+    <div class="card">
+      <h2>Infos sur un nom de domaine</h2>
+      <p class="hint">Entre un site (ex. : wikipedia.org) pour voir quand il a été créé, chez qui il est enregistré et où il est hébergé.</p>
+      <form id="domForm" class="ligne-form">
+        <input type="text" id="domInput" placeholder="exemple.fr" autocomplete="off" autocapitalize="off" spellcheck="false">
+        <button type="submit" id="domBouton">Analyser</button>
+      </form>
+      <p id="domErreur" class="erreur hidden"></p>
+    </div>
+
+    <div id="domResults" class="hidden">
+      <div class="card">
+        <h2>Enregistrement</h2>
+        <div id="domAlerte" style="margin-bottom:10px"></div>
+        <div class="summary" id="domRdap"></div>
+      </div>
+      <div class="card">
+        <h2>DNS</h2>
+        <p class="hint">Les « panneaux indicateurs » du domaine : vers quels serveurs il pointe.</p>
+        <div class="summary" id="domDns"></div>
+      </div>
+      <div class="card">
+        <h2>Pour aller plus loin</h2>
+        <div class="summary" id="domLiens"></div>
       </div>
     </div>
   </section>
@@ -269,6 +320,172 @@
     }
     raw.textContent = JSON.stringify(propre, null, 2);
   }
+
+  /* ========== Navigation entre outils ========== */
+  document.querySelectorAll('nav button[data-tool]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('nav button[data-tool]').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.querySelectorAll('main > section').forEach(s => s.classList.add('hidden'));
+      document.getElementById('tool-' + btn.dataset.tool).classList.remove('hidden');
+    });
+  });
+
+  /* ========== Outil Domaine ========== */
+  const domForm = document.getElementById('domForm');
+  const domInput = document.getElementById('domInput');
+  const domBouton = document.getElementById('domBouton');
+  const domErreur = document.getElementById('domErreur');
+  const domResults = document.getElementById('domResults');
+  const domRdap = document.getElementById('domRdap');
+  const domDns = document.getElementById('domDns');
+  const domLiens = document.getElementById('domLiens');
+  const domAlerte = document.getElementById('domAlerte');
+
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+
+  function nettoyerDomaine(s) {
+    let d = s.trim().toLowerCase();
+    d = d.replace(/^[a-z]+:\/\//, '');
+    d = d.split(/[\/?#]/)[0];
+    d = d.split('@').pop();
+    d = d.replace(/:\d+$/, '').replace(/\.$/, '');
+    return d;
+  }
+
+  function formatJour(iso) {
+    const d = new Date(iso);
+    if (isNaN(d)) return esc(iso);
+    return d.toLocaleDateString('fr-FR', { dateStyle: 'long' });
+  }
+
+  function anciennete(iso) {
+    const jours = (Date.now() - new Date(iso)) / 86400000;
+    if (jours < 60) return `il y a ${Math.max(0, Math.round(jours))} jours`;
+    if (jours < 365) return `il y a ${Math.round(jours / 30)} mois`;
+    return `il y a ${(jours / 365).toFixed(1).replace('.', ',')} ans`;
+  }
+
+  const TYPES_DNS = {
+    A:    { code: 1,  label: 'Adresse IPv4' },
+    AAAA: { code: 28, label: 'Adresse IPv6' },
+    MX:   { code: 15, label: 'Serveurs mail' },
+    NS:   { code: 2,  label: 'Serveurs DNS' },
+    TXT:  { code: 16, label: 'Textes (TXT)' }
+  };
+
+  async function lireDns(nom, type) {
+    const r = await fetch(`https://dns.google/resolve?name=${encodeURIComponent(nom)}&type=${type}`);
+    const j = await r.json();
+    return (j.Answer || []).filter(a => a.type === TYPES_DNS[type].code).map(a => a.data);
+  }
+
+  async function lireRdap(nom) {
+    const r = await fetch('https://rdap.org/domain/' + encodeURIComponent(nom));
+    if (!r.ok) throw new Error('RDAP ' + r.status);
+    return r.json();
+  }
+
+  function evenement(data, action) {
+    const e = (data.events || []).find(e => e.eventAction === action);
+    return e ? e.eventDate : null;
+  }
+
+  function entite(data, role) {
+    const e = (data.entities || []).find(e => (e.roles || []).includes(role));
+    if (!e) return null;
+    const vcard = e.vcardArray && e.vcardArray[1];
+    const fn = vcard && vcard.find(x => x[0] === 'fn');
+    return (fn && fn[3]) ? fn[3] : (e.handle || null);
+  }
+
+  domForm.addEventListener('submit', async e => {
+    e.preventDefault();
+    const domaine = nettoyerDomaine(domInput.value);
+    domErreur.classList.add('hidden');
+
+    if (!/^([a-z0-9-]+\.)+[a-z0-9-]{2,}$/.test(domaine)) {
+      domErreur.textContent = 'Ça ne ressemble pas à un nom de domaine. Exemple : wikipedia.org';
+      domErreur.classList.remove('hidden');
+      return;
+    }
+
+    domInput.value = domaine;
+    domBouton.disabled = true;
+    domBouton.textContent = '…';
+    domResults.classList.remove('hidden');
+    domAlerte.innerHTML = '';
+    domRdap.innerHTML = '<p class="hint">Recherche en cours…</p>';
+    domDns.innerHTML = '<p class="hint">Recherche en cours…</p>';
+
+    const racine = domaine.replace(/^www\./, '');
+    const types = Object.keys(TYPES_DNS);
+
+    const [rdapRes, ...dnsRes] = await Promise.allSettled([
+      lireRdap(racine),
+      ...types.map(t => lireDns(domaine, t))
+    ]);
+
+    // --- Enregistrement (RDAP) ---
+    if (rdapRes.status === 'fulfilled') {
+      const d = rdapRes.value;
+      const cree = evenement(d, 'registration');
+      const modifie = evenement(d, 'last changed');
+      const expire = evenement(d, 'expiration');
+      const titulaire = entite(d, 'registrant');
+      const ns = (d.nameservers || []).map(n => esc((n.ldhName || '').toLowerCase())).join('<br>');
+
+      let html = '';
+      html += ligne('Domaine', esc(d.ldhName ? d.ldhName.toLowerCase() : racine));
+      html += ligne('Bureau d\'enregistrement', entite(d, 'registrar') ? esc(entite(d, 'registrar')) : null);
+      html += ligne('Titulaire', titulaire ? esc(titulaire) : '<span style="color:var(--muted)">Masqué</span>');
+      html += ligne('Créé le', cree ? `${formatJour(cree)}<br><small>${anciennete(cree)}</small>` : null);
+      html += ligne('Dernière modif.', modifie ? formatJour(modifie) : null);
+      html += ligne('Expire le', expire ? formatJour(expire) : null);
+      html += ligne('Statut', (d.status || []).length ? esc(d.status.join(', ')) : null);
+      html += ligne('Serveurs DNS', ns || null);
+      domRdap.innerHTML = html;
+
+      if (cree && (Date.now() - new Date(cree)) / 86400000 < 90) {
+        domAlerte.innerHTML = '<span class="badge warn">⚠️ Domaine créé il y a moins de 3 mois</span>' +
+          '<p class="hint" style="margin-top:8px">Un site très récent qui demande de l\'argent ou des identifiants est un signal classique d\'arnaque.</p>';
+      }
+      if (!titulaire) {
+        domRdap.innerHTML += '<p class="hint" style="margin-top:10px">Le titulaire est souvent masqué : c\'est normal pour les particuliers (RGPD) et fréquent pour les entreprises.</p>';
+      }
+    } else {
+      domRdap.innerHTML = '<p class="erreur">Impossible de récupérer les infos d\'enregistrement pour ce domaine. Certaines extensions ne les publient pas en accès libre.</p>';
+    }
+
+    // --- DNS ---
+    let htmlDns = '';
+    types.forEach((t, i) => {
+      const res = dnsRes[i];
+      if (res.status !== 'fulfilled' || res.value.length === 0) return;
+      let valeurs = res.value.map(v => esc(v));
+      if (t === 'A') {
+        valeurs = res.value.map(ip => `<a href="https://ipinfo.io/${encodeURIComponent(ip)}" target="_blank" rel="noopener">${esc(ip)}</a>`);
+      }
+      htmlDns += ligne(TYPES_DNS[t].label, valeurs.join('<br>'));
+    });
+    domDns.innerHTML = htmlDns || '<p class="hint">Aucun enregistrement DNS trouvé. Le domaine n\'existe peut-être pas.</p>';
+    if (htmlDns && dnsRes[0].status === 'fulfilled' && dnsRes[0].value.length) {
+      domDns.innerHTML += '<p class="hint" style="margin-top:10px">Touche une adresse IPv4 pour voir chez quel hébergeur et dans quel pays se trouve le serveur.</p>';
+    }
+
+    // --- Liens externes ---
+    const q = encodeURIComponent(racine);
+    domLiens.innerHTML =
+      ligne('Sous-domaines', `<a href="https://crt.sh/?q=${q}" target="_blank" rel="noopener">crt.sh</a>`) +
+      ligne('Anciennes versions', `<a href="https://web.archive.org/web/*/${q}" target="_blank" rel="noopener">Wayback Machine</a>`) +
+      ligne('Réputation', `<a href="https://www.virustotal.com/gui/domain/${q}" target="_blank" rel="noopener">VirusTotal</a>`) +
+      ligne('Capture du site', `<a href="https://urlscan.io/search/#${q}" target="_blank" rel="noopener">urlscan.io</a>`);
+
+    domBouton.disabled = false;
+    domBouton.textContent = 'Analyser';
+  });
 </script>
 </body>
 </html>
