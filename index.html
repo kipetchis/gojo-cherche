@@ -146,6 +146,25 @@
   }
   .ligne-form button:disabled { opacity: 0.6; }
   .erreur { color: var(--warn); font-size: 0.9rem; }
+  .moteurs {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 8px;
+  }
+  .moteurs a {
+    display: block;
+    text-align: center;
+    padding: 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg);
+    text-decoration: none;
+    font-weight: 600;
+  }
+  .moteurs a small { display: block; font-weight: 400; color: var(--muted); font-size: 0.8rem; }
+  #invPreview { display: none; max-width: 100%; max-height: 220px; border-radius: 8px; margin: 0 auto 12px; }
+  ul.conseils { margin: 0; padding-left: 20px; font-size: 0.92rem; }
+  ul.conseils li { margin-bottom: 6px; }
   footer { text-align: center; color: var(--muted); font-size: 0.8rem; padding-bottom: 24px; }
 </style>
 </head>
@@ -160,7 +179,7 @@
   <button class="active" data-tool="exif">📷 Photo</button>
   <button data-tool="domaine">🌐 Domaine</button>
   <button disabled title="Bientôt">👤 Pseudo</button>
-  <button disabled title="Bientôt">🖼️ Image inversée</button>
+  <button data-tool="inverse">🖼️ Image inversée</button>
   <button disabled title="Bientôt">🕰️ Archives</button>
 </nav>
 
@@ -215,6 +234,47 @@
         <h2>Pour aller plus loin</h2>
         <div class="summary" id="domLiens"></div>
       </div>
+    </div>
+  </section>
+
+  <section id="tool-inverse" class="hidden">
+    <div class="card">
+      <h2>Recherche d'image inversée</h2>
+      <p class="hint">Retrouve où une image apparaît ailleurs sur le web : sa source d'origine, une version plus ancienne, ou la preuve qu'une photo « d'actualité » date en fait d'il y a des années.</p>
+      <form id="invForm" class="ligne-form">
+        <input type="url" id="invInput" placeholder="Adresse de l'image (https://…)" autocomplete="off" autocapitalize="off" spellcheck="false">
+        <button type="submit">Chercher</button>
+      </form>
+      <p id="invErreur" class="erreur hidden"></p>
+      <p class="hint" style="margin-top:10px">Astuce : sur une image en ligne, appui long (ou clic droit) → « Copier l'adresse de l'image ».</p>
+    </div>
+
+    <div id="invResults" class="card hidden">
+      <img id="invPreview" alt="Aperçu">
+      <h2>Lancer la recherche sur…</h2>
+      <p class="hint">Chaque moteur a ses forces : essaie-en plusieurs.</p>
+      <div class="moteurs" id="invMoteurs"></div>
+    </div>
+
+    <div class="card">
+      <h2>L'image est sur ton appareil ?</h2>
+      <p class="hint">Les moteurs n'acceptent pas qu'une autre page leur envoie un fichier : ouvre l'un d'eux et dépose ta photo directement.</p>
+      <div class="moteurs">
+        <a href="https://lens.google.com/" target="_blank" rel="noopener">Google Lens<small>objets, lieux, textes</small></a>
+        <a href="https://www.bing.com/visualsearch" target="_blank" rel="noopener">Bing<small>bon complément</small></a>
+        <a href="https://yandex.com/images/" target="_blank" rel="noopener">Yandex<small>visages et lieux</small></a>
+        <a href="https://tineye.com/" target="_blank" rel="noopener">TinEye<small>plus ancienne version</small></a>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Bien exploiter les résultats</h2>
+      <ul class="conseils">
+        <li><strong>Trie par date</strong> sur TinEye : la plus ancienne apparition est souvent la vraie source.</li>
+        <li><strong>Recadre</strong> sur un détail (enseigne, monument, paysage) si l'image entière ne donne rien.</li>
+        <li><strong>Une capture d'écran</strong> perd les métadonnées mais reste trouvable par son contenu.</li>
+        <li><strong>Image retournée ou retouchée ?</strong> Essaie la version miroir : certains faussaires l'inversent pour tromper les moteurs.</li>
+      </ul>
     </div>
   </section>
 </main>
@@ -485,6 +545,45 @@
 
     domBouton.disabled = false;
     domBouton.textContent = 'Analyser';
+  });
+
+  /* ========== Outil Image inversée ========== */
+  const invForm = document.getElementById('invForm');
+  const invInput = document.getElementById('invInput');
+  const invErreur = document.getElementById('invErreur');
+  const invResults = document.getElementById('invResults');
+  const invPreview = document.getElementById('invPreview');
+  const invMoteurs = document.getElementById('invMoteurs');
+
+  invPreview.addEventListener('error', () => { invPreview.style.display = 'none'; });
+
+  invForm.addEventListener('submit', e => {
+    e.preventDefault();
+    invErreur.classList.add('hidden');
+    const url = invInput.value.trim();
+
+    let ok = false;
+    try { ok = ['http:', 'https:'].includes(new URL(url).protocol); } catch (_) {}
+    if (!ok) {
+      invErreur.textContent = 'Colle une adresse qui commence par http:// ou https://';
+      invErreur.classList.remove('hidden');
+      invResults.classList.add('hidden');
+      return;
+    }
+
+    const u = encodeURIComponent(url);
+    const moteurs = [
+      ['Google Lens', 'objets, lieux, textes', `https://lens.google.com/uploadbyurl?url=${u}`],
+      ['Bing', 'bon complément', `https://www.bing.com/images/search?view=detailv2&iss=sbi&q=imgurl:${u}`],
+      ['Yandex', 'visages et lieux', `https://yandex.com/images/search?rpt=imageview&url=${u}`],
+      ['TinEye', 'plus ancienne version', `https://tineye.com/search?url=${u}`]
+    ];
+    invMoteurs.innerHTML = moteurs.map(([nom, desc, lien]) =>
+      `<a href="${lien}" target="_blank" rel="noopener">${nom}<small>${desc}</small></a>`).join('');
+
+    invPreview.style.display = 'block';
+    invPreview.src = url;
+    invResults.classList.remove('hidden');
   });
 </script>
 </body>
