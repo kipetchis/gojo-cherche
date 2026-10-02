@@ -165,6 +165,16 @@
   #invPreview { display: none; max-width: 100%; max-height: 220px; border-radius: 8px; margin: 0 auto 12px; }
   ul.conseils { margin: 0; padding-left: 20px; font-size: 0.92rem; }
   ul.conseils li { margin-bottom: 6px; }
+  .ligne-date { display: flex; gap: 8px; align-items: center; margin-top: 10px; flex-wrap: wrap; }
+  .ligne-date label { color: var(--muted); font-size: 0.9rem; }
+  .ligne-date input {
+    padding: 8px 10px;
+    font-size: 0.95rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg);
+    color: var(--text);
+  }
   footer { text-align: center; color: var(--muted); font-size: 0.8rem; padding-bottom: 24px; }
 </style>
 </head>
@@ -180,7 +190,7 @@
   <button data-tool="domaine">🌐 Domaine</button>
   <button disabled title="Bientôt">👤 Pseudo</button>
   <button data-tool="inverse">🖼️ Image inversée</button>
-  <button disabled title="Bientôt">🕰️ Archives</button>
+  <button data-tool="archives">🕰️ Archives</button>
 </nav>
 
 <main>
@@ -274,6 +284,46 @@
         <li><strong>Recadre</strong> sur un détail (enseigne, monument, paysage) si l'image entière ne donne rien.</li>
         <li><strong>Une capture d'écran</strong> perd les métadonnées mais reste trouvable par son contenu.</li>
         <li><strong>Image retournée ou retouchée ?</strong> Essaie la version miroir : certains faussaires l'inversent pour tromper les moteurs.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section id="tool-archives" class="hidden">
+    <div class="card">
+      <h2>Archives d'une page web</h2>
+      <p class="hint">Retrouve à quoi ressemblait une page dans le passé, même si elle a été modifiée ou supprimée depuis.</p>
+      <form id="arcForm">
+        <div class="ligne-form">
+          <input type="text" id="arcInput" placeholder="exemple.fr/une-page" autocomplete="off" autocapitalize="off" spellcheck="false">
+          <button type="submit" id="arcBouton">Chercher</button>
+        </div>
+        <div class="ligne-date">
+          <label for="arcDate">À une date précise (facultatif) :</label>
+          <input type="date" id="arcDate">
+        </div>
+      </form>
+      <p id="arcErreur" class="erreur hidden"></p>
+    </div>
+
+    <div id="arcResults" class="hidden">
+      <div class="card">
+        <h2>Wayback Machine</h2>
+        <div id="arcBadge" style="margin-bottom:10px"></div>
+        <div class="summary" id="arcWayback"></div>
+      </div>
+      <div class="card">
+        <h2>Autres options</h2>
+        <div class="summary" id="arcLiens"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Pourquoi c'est utile</h2>
+      <ul class="conseils">
+        <li><strong>Une page supprimée</strong> (article, annonce, profil d'entreprise) peut encore exister dans les archives.</li>
+        <li><strong>Compare deux dates</strong> pour repérer ce qui a été modifié discrètement : prix, mentions légales, déclarations…</li>
+        <li><strong>Un site d'arnaque</strong> qui n'a aucune archive ancienne est souvent très récent.</li>
+        <li><strong>Pense à archiver toi-même</strong> une page importante avant qu'elle disparaisse : c'est une preuve datée.</li>
       </ul>
     </div>
   </section>
@@ -584,6 +634,91 @@
     invPreview.style.display = 'block';
     invPreview.src = url;
     invResults.classList.remove('hidden');
+  });
+
+  /* ========== Outil Archives ========== */
+  const arcForm = document.getElementById('arcForm');
+  const arcInput = document.getElementById('arcInput');
+  const arcDate = document.getElementById('arcDate');
+  const arcBouton = document.getElementById('arcBouton');
+  const arcErreur = document.getElementById('arcErreur');
+  const arcResults = document.getElementById('arcResults');
+  const arcBadge = document.getElementById('arcBadge');
+  const arcWayback = document.getElementById('arcWayback');
+  const arcLiens = document.getElementById('arcLiens');
+
+  async function captureProche(url, horodatage) {
+    let api = 'https://archive.org/wayback/available?url=' + encodeURIComponent(url);
+    if (horodatage) api += '&timestamp=' + horodatage;
+    const r = await fetch(api);
+    const j = await r.json();
+    const c = j.archived_snapshots && j.archived_snapshots.closest;
+    return (c && c.available) ? c : null;
+  }
+
+  function dateWayback(ts) {
+    const d = new Date(Date.UTC(+ts.slice(0, 4), +ts.slice(4, 6) - 1, +ts.slice(6, 8), +ts.slice(8, 10) || 0, +ts.slice(10, 12) || 0));
+    return d.toLocaleString('fr-FR', { dateStyle: 'long', timeStyle: 'short' });
+  }
+
+  function lienCapture(c) {
+    const lien = c.url.replace(/^http:/, 'https:');
+    return `<a href="${esc(lien)}" target="_blank" rel="noopener">${dateWayback(c.timestamp)}</a>`;
+  }
+
+  arcForm.addEventListener('submit', async e => {
+    e.preventDefault();
+    arcErreur.classList.add('hidden');
+
+    let cible = arcInput.value.trim().replace(/^[a-z]+:\/\//i, '');
+    if (!/^[^\s\/]+\.[^\s\/]{2,}/.test(cible)) {
+      arcErreur.textContent = 'Entre une adresse de site ou de page. Exemple : wikipedia.org';
+      arcErreur.classList.remove('hidden');
+      return;
+    }
+
+    arcBouton.disabled = true;
+    arcBouton.textContent = '…';
+    arcResults.classList.remove('hidden');
+    arcBadge.innerHTML = '';
+    arcWayback.innerHTML = '<p class="hint">Recherche en cours…</p>';
+
+    const choisie = arcDate.value ? arcDate.value.replace(/-/g, '') : null;
+    const [premiere, derniere, aDate] = await Promise.allSettled([
+      captureProche(cible, '19960101'),
+      captureProche(cible, null),
+      choisie ? captureProche(cible, choisie) : Promise.resolve(null)
+    ]);
+
+    const p = premiere.status === 'fulfilled' ? premiere.value : null;
+    const d = derniere.status === 'fulfilled' ? derniere.value : null;
+    const a = aDate.status === 'fulfilled' ? aDate.value : null;
+
+    if (premiere.status === 'rejected' && derniere.status === 'rejected') {
+      arcWayback.innerHTML = '<p class="erreur">La Wayback Machine ne répond pas pour le moment. Réessaie dans quelques minutes, ou utilise les liens ci-dessous.</p>';
+    } else if (!p && !d) {
+      arcBadge.innerHTML = '<span class="badge warn">Aucune archive trouvée</span>';
+      arcWayback.innerHTML = '<p class="hint">Cette page n\'a jamais été archivée, ou l\'adresse est mal écrite. Essaie avec juste le nom du site.</p>';
+    } else {
+      arcBadge.innerHTML = '<span class="badge ok">Page archivée</span>';
+      let html = '';
+      if (p) html += ligne('Plus ancienne', lienCapture(p));
+      if (d) html += ligne('Plus récente', lienCapture(d));
+      if (choisie) {
+        html += ligne('Proche du ' + new Date(arcDate.value).toLocaleDateString('fr-FR', { dateStyle: 'long' }),
+          a ? lienCapture(a) : '<span style="color:var(--muted)">Aucune</span>');
+      }
+      arcWayback.innerHTML = html;
+    }
+
+    const u = encodeURIComponent(cible);
+    arcLiens.innerHTML =
+      ligne('Toutes les captures', `<a href="https://web.archive.org/web/*/${u}" target="_blank" rel="noopener">Calendrier Wayback</a>`) +
+      ligne('Autre service d\'archive', `<a href="https://archive.ph/${u}" target="_blank" rel="noopener">archive.today</a>`) +
+      ligne('Archiver maintenant', `<a href="https://web.archive.org/save/${u}" target="_blank" rel="noopener">Sauvegarder la page</a>`);
+
+    arcBouton.disabled = false;
+    arcBouton.textContent = 'Chercher';
   });
 </script>
 </body>
