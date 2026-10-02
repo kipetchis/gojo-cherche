@@ -167,6 +167,12 @@
   ul.conseils li { margin-bottom: 6px; }
   .ligne-date { display: flex; gap: 8px; align-items: center; margin-top: 10px; flex-wrap: wrap; }
   .ligne-date label { color: var(--muted); font-size: 0.9rem; }
+  .compteur { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+  .badge.neutre { background: color-mix(in srgb, var(--muted) 18%, transparent); color: var(--muted); }
+  .cat-titre { margin: 14px 0 4px; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
+  .site { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); }
+  .site:last-child { border-bottom: none; }
+  .site.absent { opacity: 0.55; }
   .ligne-date input {
     padding: 8px 10px;
     font-size: 0.95rem;
@@ -188,7 +194,7 @@
 <nav>
   <button class="active" data-tool="exif">📷 Photo</button>
   <button data-tool="domaine">🌐 Domaine</button>
-  <button disabled title="Bientôt">👤 Pseudo</button>
+  <button data-tool="pseudo">👤 Pseudo</button>
   <button data-tool="inverse">🖼️ Image inversée</button>
   <button data-tool="archives">🕰️ Archives</button>
 </nav>
@@ -285,6 +291,36 @@
         <li><strong>Une capture d'écran</strong> perd les métadonnées mais reste trouvable par son contenu.</li>
         <li><strong>Image retournée ou retouchée ?</strong> Essaie la version miroir : certains faussaires l'inversent pour tromper les moteurs.</li>
       </ul>
+    </div>
+  </section>
+
+  <section id="tool-pseudo" class="hidden">
+    <div class="card">
+      <h2>Recherche de pseudo</h2>
+      <p class="hint">Vérifie sur quels sites un pseudo est utilisé. Idéal pour mesurer ta propre empreinte en ligne, ou vérifier qu'un nom est libre avant de le prendre.</p>
+      <form id="psForm" class="ligne-form">
+        <input type="text" id="psInput" placeholder="pseudo" autocomplete="off" autocapitalize="off" spellcheck="false">
+        <button type="submit" id="psBouton">Vérifier</button>
+      </form>
+      <p id="psErreur" class="erreur hidden"></p>
+    </div>
+
+    <div id="psResults" class="card hidden">
+      <h2>Résultats</h2>
+      <div class="compteur" id="psCompteur"></div>
+      <div id="psListe"></div>
+      <p class="hint" style="margin-top:12px">« Trouvé » signifie que le pseudo est pris, <strong>pas</strong> que c'est la même personne partout. Compare les photos, bios et dates avant de relier deux comptes.</p>
+    </div>
+
+    <div id="psManuel" class="card hidden">
+      <h2>À vérifier à la main</h2>
+      <p class="hint">Ces sites bloquent les vérifications automatiques. Ouvre-les pour voir.</p>
+      <div class="moteurs" id="psManuelLiens"></div>
+    </div>
+
+    <div class="card">
+      <h2>Avec modération</h2>
+      <p class="hint" style="margin:0">Rassembler les comptes d'un particulier sans raison légitime peut porter atteinte à sa vie privée (RGPD). Garde cet outil pour toi-même, des marques, des comptes publics ou de la vérification d'arnaques.</p>
     </div>
   </section>
 
@@ -719,6 +755,92 @@
 
     arcBouton.disabled = false;
     arcBouton.textContent = 'Chercher';
+  });
+
+  /* ========== Outil Pseudo ========== */
+  const WORKER_PSEUDO = 'https://gojo-pseudo.kip3tchis.workers.dev/';
+
+  const psForm = document.getElementById('psForm');
+  const psInput = document.getElementById('psInput');
+  const psBouton = document.getElementById('psBouton');
+  const psErreur = document.getElementById('psErreur');
+  const psResults = document.getElementById('psResults');
+  const psCompteur = document.getElementById('psCompteur');
+  const psListe = document.getElementById('psListe');
+  const psManuel = document.getElementById('psManuel');
+  const psManuelLiens = document.getElementById('psManuelLiens');
+
+  const STATUTS = {
+    trouve:    { texte: 'Trouvé',    classe: 'warn' },
+    absent:    { texte: 'Absent',    classe: 'ok' },
+    incertain: { texte: 'Incertain', classe: 'neutre' }
+  };
+
+  const MANUELS = [
+    ['Instagram', u => `https://www.instagram.com/${u}/`],
+    ['TikTok', u => `https://www.tiktok.com/@${u}`],
+    ['X (Twitter)', u => `https://x.com/${u}`],
+    ['Facebook', u => `https://www.facebook.com/${u}`],
+    ['YouTube', u => `https://www.youtube.com/@${u}`],
+    ['Reddit', u => `https://www.reddit.com/user/${u}`],
+    ['Twitch', u => `https://www.twitch.tv/${u}`],
+    ['Pinterest', u => `https://www.pinterest.com/${u}/`]
+  ];
+
+  psForm.addEventListener('submit', async e => {
+    e.preventDefault();
+    psErreur.classList.add('hidden');
+    const pseudo = psInput.value.trim().replace(/^@/, '');
+
+    if (!/^[A-Za-z0-9._-]{2,40}$/.test(pseudo)) {
+      psErreur.textContent = 'Pseudo de 2 à 40 caractères : lettres, chiffres, point, tiret ou tiret bas.';
+      psErreur.classList.remove('hidden');
+      return;
+    }
+
+    psInput.value = pseudo;
+    psBouton.disabled = true;
+    psBouton.textContent = '…';
+    psResults.classList.remove('hidden');
+    psCompteur.innerHTML = '';
+    psListe.innerHTML = '<p class="hint">Vérification sur une vingtaine de sites, quelques secondes…</p>';
+
+    const u = encodeURIComponent(pseudo);
+    psManuelLiens.innerHTML = MANUELS.map(([nom, lien]) =>
+      `<a href="${lien(u)}" target="_blank" rel="noopener">${nom}</a>`).join('');
+    psManuel.classList.remove('hidden');
+
+    try {
+      const r = await fetch(WORKER_PSEUDO + '?u=' + u);
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.erreur || 'Erreur ' + r.status);
+
+      const ordre = { trouve: 0, incertain: 1, absent: 2 };
+      const res = j.resultats.slice().sort((a, b) => ordre[a.statut] - ordre[b.statut]);
+
+      const nb = s => res.filter(x => x.statut === s).length;
+      psCompteur.innerHTML =
+        `<span class="badge warn">${nb('trouve')} trouvé(s)</span>` +
+        `<span class="badge ok">${nb('absent')} absent(s)</span>` +
+        (nb('incertain') ? `<span class="badge neutre">${nb('incertain')} incertain(s)</span>` : '');
+
+      const categories = [...new Set(res.map(x => x.cat))];
+      psListe.innerHTML = categories.map(cat =>
+        `<div class="cat-titre">${esc(cat)}</div>` +
+        res.filter(x => x.cat === cat).map(x => {
+          const s = STATUTS[x.statut] || STATUTS.incertain;
+          const nom = x.statut === 'absent'
+            ? esc(x.nom)
+            : `<a href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.nom)}</a>`;
+          return `<div class="site ${x.statut}"><span>${nom}</span><span class="badge ${s.classe}">${s.texte}</span></div>`;
+        }).join('')
+      ).join('');
+    } catch (err) {
+      psListe.innerHTML = '<p class="erreur">Le service de vérification ne répond pas. Réessaie dans un instant.</p>';
+    }
+
+    psBouton.disabled = false;
+    psBouton.textContent = 'Vérifier';
   });
 </script>
 </body>
