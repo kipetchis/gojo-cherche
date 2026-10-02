@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gojo cherche !</title>
+<script src="https://cdn.jsdelivr.net/npm/exifr@7/dist/full.umd.js"></script>
+<style>
+  :root {
+    --bg: #f5f6f8;
+    --card: #ffffff;
+    --text: #1d2330;
+    --muted: #6b7385;
+    --accent: #2b6cb0;
+    --border: #dde1e8;
+    --ok: #2f855a;
+    --warn: #c05621;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #12151c;
+      --card: #1b2029;
+      --text: #e6e9ef;
+      --muted: #8d95a6;
+      --accent: #63a4ff;
+      --border: #2c3340;
+      --ok: #68d391;
+      --warn: #f6ad55;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+  }
+  header {
+    padding: 20px 16px 8px;
+    max-width: 820px;
+    margin: 0 auto;
+  }
+  header h1 { margin: 0; font-size: 1.6rem; }
+  header p { margin: 4px 0 0; color: var(--muted); font-size: 0.95rem; }
+  nav {
+    max-width: 820px;
+    margin: 12px auto 0;
+    padding: 0 16px;
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+  }
+  nav button {
+    flex: 0 0 auto;
+    border: 1px solid var(--border);
+    background: var(--card);
+    color: var(--text);
+    padding: 8px 14px;
+    border-radius: 999px;
+    font-size: 0.9rem;
+    cursor: pointer;
+  }
+  nav button.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+  nav button:disabled { opacity: 0.45; cursor: not-allowed; }
+  main { max-width: 820px; margin: 16px auto 40px; padding: 0 16px; }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+  .card h2 { margin: 0 0 6px; font-size: 1.15rem; }
+  .hint { color: var(--muted); font-size: 0.9rem; margin: 0 0 12px; }
+  #dropzone {
+    border: 2px dashed var(--border);
+    border-radius: 12px;
+    padding: 32px 16px;
+    text-align: center;
+    color: var(--muted);
+    cursor: pointer;
+    transition: border-color 0.15s;
+  }
+  #dropzone.over { border-color: var(--accent); color: var(--accent); }
+  #preview {
+    display: none;
+    max-width: 100%;
+    max-height: 260px;
+    border-radius: 8px;
+    margin: 12px auto 0;
+  }
+  .summary { display: grid; gap: 8px; }
+  .row {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.95rem;
+  }
+  .row:last-child { border-bottom: none; }
+  .row span:first-child { color: var(--muted); }
+  .row span:last-child { text-align: right; word-break: break-word; }
+  .badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 0.85rem;
+    font-weight: 600;
+  }
+  .badge.ok { background: color-mix(in srgb, var(--ok) 18%, transparent); color: var(--ok); }
+  .badge.warn { background: color-mix(in srgb, var(--warn) 18%, transparent); color: var(--warn); }
+  a { color: var(--accent); }
+  details summary { cursor: pointer; font-weight: 600; }
+  pre {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+    overflow-x: auto;
+    font-size: 0.8rem;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .hidden { display: none; }
+  footer { text-align: center; color: var(--muted); font-size: 0.8rem; padding-bottom: 24px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🔎 Gojo cherche !</h1>
+  <p>Petite boîte à outils de recherche en sources ouvertes.</p>
+</header>
+
+<nav>
+  <button class="active" data-tool="exif">📷 Photo</button>
+  <button disabled title="Bientôt">🌐 Domaine</button>
+  <button disabled title="Bientôt">👤 Pseudo</button>
+  <button disabled title="Bientôt">🖼️ Image inversée</button>
+  <button disabled title="Bientôt">🕰️ Archives</button>
+</nav>
+
+<main>
+  <section id="tool-exif">
+    <div class="card">
+      <h2>Métadonnées d'une photo</h2>
+      <p class="hint">Dépose une photo pour voir ce qu'elle révèle : appareil, date, logiciel, position GPS… Le fichier reste sur ton appareil, rien n'est envoyé.</p>
+      <div id="dropzone">Touche ici ou glisse une image</div>
+      <input type="file" id="fileInput" accept="image/*" class="hidden">
+      <img id="preview" alt="Aperçu">
+    </div>
+
+    <div id="results" class="hidden">
+      <div class="card">
+        <h2>Résumé</h2>
+        <div id="gpsBadge" style="margin-bottom:10px"></div>
+        <div class="summary" id="summary"></div>
+      </div>
+      <div class="card">
+        <details>
+          <summary>Toutes les métadonnées brutes</summary>
+          <pre id="raw"></pre>
+        </details>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>À utiliser de façon responsable — respecte la vie privée des personnes.</footer>
+
+<script>
+  const dropzone = document.getElementById('dropzone');
+  const fileInput = document.getElementById('fileInput');
+  const preview = document.getElementById('preview');
+  const results = document.getElementById('results');
+  const summary = document.getElementById('summary');
+  const raw = document.getElementById('raw');
+  const gpsBadge = document.getElementById('gpsBadge');
+
+  dropzone.addEventListener('click', () => fileInput.click());
+  dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('over'); });
+  dropzone.addEventListener('dragleave', () => dropzone.classList.remove('over'));
+  dropzone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropzone.classList.remove('over');
+    if (e.dataTransfer.files[0]) analyser(e.dataTransfer.files[0]);
+  });
+  fileInput.addEventListener('change', () => {
+    if (fileInput.files[0]) analyser(fileInput.files[0]);
+  });
+
+  function ligne(label, valeur) {
+    if (valeur === undefined || valeur === null || valeur === '') return '';
+    return `<div class="row"><span>${label}</span><span>${valeur}</span></div>`;
+  }
+
+  function formatDate(d) {
+    if (!d) return null;
+    const date = d instanceof Date ? d : new Date(d);
+    if (isNaN(date)) return String(d);
+    return date.toLocaleString('fr-FR', { dateStyle: 'long', timeStyle: 'medium' });
+  }
+
+  function tailleLisible(octets) {
+    if (octets < 1024) return octets + ' o';
+    if (octets < 1048576) return (octets / 1024).toFixed(1) + ' Ko';
+    return (octets / 1048576).toFixed(2) + ' Mo';
+  }
+
+  async function analyser(file) {
+    preview.src = URL.createObjectURL(file);
+    preview.style.display = 'block';
+    results.classList.remove('hidden');
+    summary.innerHTML = '<p class="hint">Analyse en cours…</p>';
+    raw.textContent = '';
+    gpsBadge.innerHTML = '';
+
+    let data = null;
+    try {
+      data = await exifr.parse(file, true);
+    } catch (err) {
+      data = null;
+    }
+
+    if (!data) {
+      gpsBadge.innerHTML = '<span class="badge ok">Aucune métadonnée trouvée</span>';
+      summary.innerHTML =
+        ligne('Fichier', file.name) +
+        ligne('Taille', tailleLisible(file.size)) +
+        '<p class="hint" style="margin-top:10px">Les réseaux sociaux (Facebook, Instagram, WhatsApp…) suppriment généralement les métadonnées. Une photo « nue » est normale dans ce cas.</p>';
+      return;
+    }
+
+    let html = '';
+    html += ligne('Fichier', file.name);
+    html += ligne('Taille', tailleLisible(file.size));
+    html += ligne('Marque', data.Make);
+    html += ligne('Modèle', data.Model);
+    html += ligne('Objectif', data.LensModel);
+    html += ligne('Logiciel', data.Software);
+    html += ligne('Prise de vue', formatDate(data.DateTimeOriginal));
+    html += ligne('Modification', formatDate(data.ModifyDate));
+    html += ligne('Dimensions', (data.ExifImageWidth && data.ExifImageHeight) ? `${data.ExifImageWidth} × ${data.ExifImageHeight}` : null);
+    html += ligne('Auteur', data.Artist);
+    html += ligne('Copyright', data.Copyright);
+
+    if (typeof data.latitude === 'number' && typeof data.longitude === 'number') {
+      const lat = data.latitude.toFixed(6);
+      const lon = data.longitude.toFixed(6);
+      gpsBadge.innerHTML = '<span class="badge warn">📍 Position GPS présente</span>';
+      html += ligne('Latitude', lat);
+      html += ligne('Longitude', lon);
+      html += ligne('Altitude', data.GPSAltitude ? Math.round(data.GPSAltitude) + ' m' : null);
+      html += ligne('Carte',
+        `<a href="https://www.openstreetmap.org/?mlat=${lat}&mlon=${lon}#map=17/${lat}/${lon}" target="_blank" rel="noopener">OpenStreetMap</a> · ` +
+        `<a href="https://www.google.com/maps?q=${lat},${lon}" target="_blank" rel="noopener">Google Maps</a>`);
+    } else {
+      gpsBadge.innerHTML = '<span class="badge ok">Pas de position GPS</span>';
+    }
+
+    summary.innerHTML = html;
+
+    const propre = {};
+    for (const [k, v] of Object.entries(data)) {
+      if (v instanceof Uint8Array || ArrayBuffer.isView(v)) continue;
+      propre[k] = v instanceof Date ? v.toISOString() : v;
+    }
+    raw.textContent = JSON.stringify(propre, null, 2);
+  }
+</script>
+</body>
+</html>
