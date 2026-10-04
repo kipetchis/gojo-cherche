@@ -1099,6 +1099,23 @@
     adresses.forEach(a => signauxUrl(a).forEach(([niv, msg]) => {
       if (!vus.has(msg)) { vus.add(msg); signaux.push([niv, msg]); }
     }));
+    // Google Safe Browsing (base de Chrome / Android)
+    const sb = res.safeBrowsing || { statut: 'indisponible', menaces: [] };
+    const TYPES_MENACE = {
+      SOCIAL_ENGINEERING: 'hameçonnage (faux site pour voler tes informations)',
+      MALWARE: 'logiciel malveillant',
+      UNWANTED_SOFTWARE: 'logiciel indésirable',
+      POTENTIALLY_HARMFUL_APPLICATION: 'application dangereuse'
+    };
+    if (sb.statut === 'menace') {
+      const types = [...new Set(sb.menaces.map(m => TYPES_MENACE[m.type] || m.type))];
+      signaux.unshift(['danger', `<strong>Signalé par Google Safe Browsing</strong> : ${types.map(esc).join(', ')}. C'est la même base qui affiche la page rouge « Site dangereux » dans Chrome.`]);
+    } else if (sb.statut === 'ok') {
+      signaux.push(['info', 'Google Safe Browsing : aucun signalement. Les arnaques de moins de quelques jours n\'y figurent pas toujours encore.']);
+    } else {
+      signaux.push(['info', 'Vérification Google Safe Browsing indisponible pour le moment : seules les règles de l\'app ont été appliquées.']);
+    }
+
     const redirs = etapes.filter(et => et.type === 'http' || et.type === 'meta').length;
     if (redirs >= 3) signaux.push(['attention', `${redirs} redirections successives : technique fréquente pour brouiller les pistes.`]);
 
@@ -1141,14 +1158,17 @@
     const ordre = { danger: 0, attention: 1, info: 2 };
     signaux.sort((a, b) => ordre[a[0]] - ordre[b[0]]);
     const score = signaux.reduce((t, s) => t + (s[0] === 'danger' ? 3 : s[0] === 'attention' ? 1 : 0), 0);
-    lienVerdict.innerHTML = score >= 3
+    lienVerdict.innerHTML = sb.statut === 'menace'
+      ? '🚩 Site dangereux confirmé : n\'ouvre surtout pas ce lien'
+      : score >= 3
       ? '🚩 Très suspect : ne saisis aucune information'
       : score >= 1
         ? '⚠️ Prudence : quelques signaux inhabituels'
-        : '✅ Aucun signal évident';
-    lienSignaux.innerHTML = signaux.length
-      ? signaux.map(([niv, msg]) => `<div class="signal"><span class="badge ${NIVEAUX[niv].badge}">${NIVEAUX[niv].texte}</span><span>${msg}</span></div>`).join('')
-      : '<p class="hint" style="margin:0">Rien d\'anormal repéré, ce qui ne garantit pas que le site soit sûr. Reste attentif à ce qu\'il te demande.</p>';
+        : '🔍 Aucun signal détecté';
+    lienSignaux.innerHTML = signaux.map(([niv, msg]) => `<div class="signal"><span class="badge ${NIVEAUX[niv].badge}">${NIVEAUX[niv].texte}</span><span>${msg}</span></div>`).join('');
+    if (score === 0 && sb.statut !== 'menace') {
+      lienSignaux.innerHTML += '<p class="hint" style="margin:10px 0 0">Ça ne prouve pas que le lien est sûr. <strong>Un lien inconnu reçu par SMS reste suspect par défaut</strong> : en cas de doute, passe par le site ou l\'appli officielle plutôt que par le lien.</p>';
+    }
 
     lienBouton.disabled = false;
     lienBouton.textContent = 'Analyser';
