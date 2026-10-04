@@ -470,4 +470,1558 @@
     </div>
 
     <div id="geoAtelier" class="hidden">
-      <di
+      <div class="card">
+        <h2>1. Isole un détail</h2>
+        <p class="hint">Fais glisser ton doigt sur la photo pour encadrer un détail (enseigne, monument, montagne, panneau…), puis télécharge-le pour le chercher dans Google Lens.</p>
+        <canvas id="geoCanvas"></canvas>
+        <div class="outils-geo">
+          <button type="button" class="bouton-sec" id="geoTelecharger" disabled>⬇️ Télécharger le détail</button>
+          <button type="button" class="bouton-sec" id="geoMiroir">↔️ Miroir</button>
+          <button type="button" class="bouton-sec" id="geoEffacer">✖️ Effacer le cadre</button>
+        </div>
+        <div class="moteurs" style="margin-top:12px">
+          <a href="https://lens.google.com/" target="_blank" rel="noopener">Google Lens<small>monuments, enseignes</small></a>
+          <a href="https://yandex.com/images/" target="_blank" rel="noopener">Yandex<small>paysages, bâtiments</small></a>
+          <a href="https://www.bing.com/visualsearch" target="_blank" rel="noopener">Bing<small>complément</small></a>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>2. Relève les indices</h2>
+        <p class="hint">Coche ce que tu repères et note-le : chaque indice réduit la zone possible.</p>
+        <div id="geoIndices"></div>
+        <textarea class="notes" id="geoNotes" placeholder="Tes notes : « panneau en espagnol », « conduite à gauche », « montagnes au fond »…"></textarea>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>3. Teste une hypothèse</h2>
+      <p class="hint">Entre un lieu (« Parthenay », « place du marché Niort ») ou des coordonnées (« 46.58, 0.34 »), puis vérifie sur les vues satellite et de rue.</p>
+      <form id="geoForm" class="ligne-form">
+        <input type="text" id="geoLieu" placeholder="Lieu ou coordonnées" autocomplete="off" spellcheck="false">
+        <button type="submit" id="geoChercher">Situer</button>
+      </form>
+      <p id="geoErreur" class="erreur hidden"></p>
+      <div id="geoCandidats"></div>
+      <div id="geoCartes" class="hidden" style="margin-top:12px">
+        <div class="summary" id="geoPoint"></div>
+        <div class="moteurs" id="geoLiens" style="margin-top:10px"></div>
+        <h2 style="margin-top:16px;font-size:1rem">☀️ Vérifier avec le soleil</h2>
+        <p class="hint">Compare la direction et la longueur des ombres de la photo avec la position du soleil à ce moment-là.</p>
+        <div class="ligne-date" style="margin-top:0">
+          <input type="date" id="geoDate">
+          <input type="time" id="geoHeure">
+          <a id="geoSoleil" class="bouton-sec" style="text-decoration:none;margin-top:0" target="_blank" rel="noopener">Ouvrir SunCalc</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="tool-pseudo" class="hidden">
+    <div class="card">
+      <h2>Recherche de pseudo</h2>
+      <p class="hint">Vérifie sur quels sites un pseudo est utilisé. Idéal pour mesurer ta propre empreinte en ligne, ou vérifier qu'un nom est libre avant de le prendre.</p>
+      <form id="psForm" class="ligne-form">
+        <input type="text" id="psInput" placeholder="pseudo" autocomplete="off" autocapitalize="off" spellcheck="false">
+        <button type="submit" id="psBouton">Vérifier</button>
+      </form>
+      <p id="psErreur" class="erreur hidden"></p>
+    </div>
+
+    <div id="psResults" class="card hidden">
+      <h2>Résultats</h2>
+      <div class="compteur" id="psCompteur"></div>
+      <div id="psListe"></div>
+      <p class="hint" style="margin-top:12px">« Trouvé » signifie que le pseudo est pris, <strong>pas</strong> que c'est la même personne partout. Compare les photos, bios et dates avant de relier deux comptes.</p>
+    </div>
+
+    <div id="psManuel" class="card hidden">
+      <h2>À vérifier à la main</h2>
+      <p class="hint">Ces sites bloquent les vérifications automatiques. Ouvre-les pour voir.</p>
+      <div class="moteurs" id="psManuelLiens"></div>
+    </div>
+
+    <div class="card">
+      <h2>Avec modération</h2>
+      <p class="hint" style="margin:0">Rassembler les comptes d'un particulier sans raison légitime peut porter atteinte à sa vie privée (RGPD). Garde cet outil pour toi-même, des marques, des comptes publics ou de la vérification d'arnaques.</p>
+    </div>
+  </section>
+
+  <section id="tool-archives" class="hidden">
+    <div class="card">
+      <h2>Archives d'une page web</h2>
+      <p class="hint">Retrouve à quoi ressemblait une page dans le passé, même si elle a été modifiée ou supprimée depuis.</p>
+      <form id="arcForm">
+        <div class="ligne-form">
+          <input type="text" id="arcInput" placeholder="exemple.fr/une-page" autocomplete="off" autocapitalize="off" spellcheck="false">
+          <button type="submit" id="arcBouton">Chercher</button>
+        </div>
+        <div class="ligne-date">
+          <label for="arcDate">À une date précise (facultatif) :</label>
+          <input type="date" id="arcDate">
+        </div>
+      </form>
+      <p id="arcErreur" class="erreur hidden"></p>
+    </div>
+
+    <div id="arcResults" class="hidden">
+      <div class="card">
+        <h2>Wayback Machine</h2>
+        <div id="arcBadge" style="margin-bottom:10px"></div>
+        <div class="summary" id="arcWayback"></div>
+      </div>
+      <div class="card">
+        <h2>Autres options</h2>
+        <div class="summary" id="arcLiens"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Pourquoi c'est utile</h2>
+      <ul class="conseils">
+        <li><strong>Une page supprimée</strong> (article, annonce, profil d'entreprise) peut encore exister dans les archives.</li>
+        <li><strong>Compare deux dates</strong> pour repérer ce qui a été modifié discrètement : prix, mentions légales, déclarations…</li>
+        <li><strong>Un site d'arnaque</strong> qui n'a aucune archive ancienne est souvent très récent.</li>
+        <li><strong>Pense à archiver toi-même</strong> une page importante avant qu'elle disparaisse : c'est une preuve datée.</li>
+      </ul>
+    </div>
+  </section>
+</main>
+
+<footer>À utiliser de façon responsable — respecte la vie privée des personnes.<br><small>version 11 · Où est-ce ?</small></footer>
+
+<script>
+  const dropzone = document.getElementById('dropzone');
+  const fileInput = document.getElementById('fileInput');
+  const preview = document.getElementById('preview');
+  const results = document.getElementById('results');
+  const summary = document.getElementById('summary');
+  const raw = document.getElementById('raw');
+  const gpsBadge = document.getElementById('gpsBadge');
+
+  dropzone.addEventListener('click', () => fileInput.click());
+  dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('over'); });
+  dropzone.addEventListener('dragleave', () => dropzone.classList.remove('over'));
+  dropzone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropzone.classList.remove('over');
+    if (e.dataTransfer.files[0]) analyser(e.dataTransfer.files[0]);
+  });
+  fileInput.addEventListener('change', () => {
+    if (fileInput.files[0]) analyser(fileInput.files[0]);
+  });
+
+  function ligne(label, valeur) {
+    if (valeur === undefined || valeur === null || valeur === '') return '';
+    return `<div class="row"><span>${label}</span><span>${valeur}</span></div>`;
+  }
+
+  function formatDate(d) {
+    if (!d) return null;
+    const date = d instanceof Date ? d : new Date(d);
+    if (isNaN(date)) return String(d);
+    return date.toLocaleString('fr-FR', { dateStyle: 'long', timeStyle: 'medium' });
+  }
+
+  function tailleLisible(octets) {
+    if (octets < 1024) return octets + ' o';
+    if (octets < 1048576) return (octets / 1024).toFixed(1) + ' Ko';
+    return (octets / 1048576).toFixed(2) + ' Mo';
+  }
+
+  async function analyser(file) {
+    preview.src = URL.createObjectURL(file);
+    preview.style.display = 'block';
+    results.classList.remove('hidden');
+    summary.innerHTML = '<p class="hint">Analyse en cours…</p>';
+    raw.textContent = '';
+    gpsBadge.innerHTML = '';
+
+    let data = null;
+    try {
+      data = await exifr.parse(file, true);
+    } catch (err) {
+      data = null;
+    }
+
+    if (!data) {
+      gpsBadge.innerHTML = '<span class="badge ok">Aucune métadonnée trouvée</span>';
+      summary.innerHTML =
+        ligne('Fichier', file.name) +
+        ligne('Taille', tailleLisible(file.size)) +
+        '<p class="hint" style="margin-top:10px">Les réseaux sociaux (Facebook, Instagram, WhatsApp…) suppriment généralement les métadonnées. Une photo « nue » est normale dans ce cas.</p>';
+      return;
+    }
+
+    let html = '';
+    html += ligne('Fichier', file.name);
+    html += ligne('Taille', tailleLisible(file.size));
+    html += ligne('Marque', data.Make);
+    html += ligne('Modèle', data.Model);
+    html += ligne('Objectif', data.LensModel);
+    html += ligne('Logiciel', data.Software);
+    html += ligne('Prise de vue', formatDate(data.DateTimeOriginal));
+    html += ligne('Modification', formatDate(data.ModifyDate));
+    html += ligne('Dimensions', (data.ExifImageWidth && data.ExifImageHeight) ? `${data.ExifImageWidth} × ${data.ExifImageHeight}` : null);
+    html += ligne('Auteur', data.Artist);
+    html += ligne('Copyright', data.Copyright);
+
+    if (typeof data.latitude === 'number' && typeof data.longitude === 'number') {
+      const lat = data.latitude.toFixed(6);
+      const lon = data.longitude.toFixed(6);
+      gpsBadge.innerHTML = '<span class="badge warn">📍 Position GPS présente</span>';
+      html += ligne('Latitude', lat);
+      html += ligne('Longitude', lon);
+      html += ligne('Altitude', data.GPSAltitude ? Math.round(data.GPSAltitude) + ' m' : null);
+      html += ligne('Carte',
+        `<a href="https://www.openstreetmap.org/?mlat=${lat}&mlon=${lon}#map=17/${lat}/${lon}" target="_blank" rel="noopener">OpenStreetMap</a> · ` +
+        `<a href="https://www.google.com/maps?q=${lat},${lon}" target="_blank" rel="noopener">Google Maps</a>`);
+    } else {
+      gpsBadge.innerHTML = '<span class="badge ok">Pas de position GPS</span>';
+    }
+
+    summary.innerHTML = html;
+
+    const propre = {};
+    for (const [k, v] of Object.entries(data)) {
+      if (v instanceof Uint8Array || ArrayBuffer.isView(v)) continue;
+      propre[k] = v instanceof Date ? v.toISOString() : v;
+    }
+    raw.textContent = JSON.stringify(propre, null, 2);
+  }
+
+  /* ========== Navigation entre outils ========== */
+  document.querySelectorAll('nav button[data-tool]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('nav button[data-tool]').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.querySelectorAll('main > section').forEach(s => s.classList.add('hidden'));
+      document.getElementById('tool-' + btn.dataset.tool).classList.remove('hidden');
+    });
+  });
+
+  /* ========== Outil Domaine ========== */
+  const domForm = document.getElementById('domForm');
+  const domInput = document.getElementById('domInput');
+  const domBouton = document.getElementById('domBouton');
+  const domErreur = document.getElementById('domErreur');
+  const domResults = document.getElementById('domResults');
+  const domRdap = document.getElementById('domRdap');
+  const domDns = document.getElementById('domDns');
+  const domLiens = document.getElementById('domLiens');
+  const domAlerte = document.getElementById('domAlerte');
+
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+
+  function nettoyerDomaine(s) {
+    let d = s.trim().toLowerCase();
+    d = d.replace(/^[a-z]+:\/\//, '');
+    d = d.split(/[\/?#]/)[0];
+    d = d.split('@').pop();
+    d = d.replace(/:\d+$/, '').replace(/\.$/, '');
+    return d;
+  }
+
+  function formatJour(iso) {
+    const d = new Date(iso);
+    if (isNaN(d)) return esc(iso);
+    return d.toLocaleDateString('fr-FR', { dateStyle: 'long' });
+  }
+
+  function anciennete(iso) {
+    const jours = (Date.now() - new Date(iso)) / 86400000;
+    if (jours < 60) return `il y a ${Math.max(0, Math.round(jours))} jours`;
+    if (jours < 365) return `il y a ${Math.round(jours / 30)} mois`;
+    return `il y a ${(jours / 365).toFixed(1).replace('.', ',')} ans`;
+  }
+
+  const TYPES_DNS = {
+    A:    { code: 1,  label: 'Adresse IPv4' },
+    AAAA: { code: 28, label: 'Adresse IPv6' },
+    MX:   { code: 15, label: 'Serveurs mail' },
+    NS:   { code: 2,  label: 'Serveurs DNS' },
+    TXT:  { code: 16, label: 'Textes (TXT)' }
+  };
+
+  async function lireDns(nom, type) {
+    const r = await fetch(`https://dns.google/resolve?name=${encodeURIComponent(nom)}&type=${type}`);
+    const j = await r.json();
+    return (j.Answer || []).filter(a => a.type === TYPES_DNS[type].code).map(a => a.data);
+  }
+
+  async function lireRdap(nom) {
+    const r = await fetch('https://rdap.org/domain/' + encodeURIComponent(nom));
+    if (!r.ok) throw new Error('RDAP ' + r.status);
+    return r.json();
+  }
+
+  function evenement(data, action) {
+    const e = (data.events || []).find(e => e.eventAction === action);
+    return e ? e.eventDate : null;
+  }
+
+  function entite(data, role) {
+    const e = (data.entities || []).find(e => (e.roles || []).includes(role));
+    if (!e) return null;
+    const vcard = e.vcardArray && e.vcardArray[1];
+    const fn = vcard && vcard.find(x => x[0] === 'fn');
+    return (fn && fn[3]) ? fn[3] : (e.handle || null);
+  }
+
+  domForm.addEventListener('submit', async e => {
+    e.preventDefault();
+    const domaine = nettoyerDomaine(domInput.value);
+    domErreur.classList.add('hidden');
+
+    if (!/^([a-z0-9-]+\.)+[a-z0-9-]{2,}$/.test(domaine)) {
+      domErreur.textContent = 'Ça ne ressemble pas à un nom de domaine. Exemple : wikipedia.org';
+      domErreur.classList.remove('hidden');
+      return;
+    }
+
+    domInput.value = domaine;
+    domBouton.disabled = true;
+    domBouton.textContent = '…';
+    domResults.classList.remove('hidden');
+    domAlerte.innerHTML = '';
+    domRdap.innerHTML = '<p class="hint">Recherche en cours…</p>';
+    domDns.innerHTML = '<p class="hint">Recherche en cours…</p>';
+
+    const racine = domaine.replace(/^www\./, '');
+    const types = Object.keys(TYPES_DNS);
+
+    const [rdapRes, ...dnsRes] = await Promise.allSettled([
+      lireRdap(racine),
+      ...types.map(t => lireDns(domaine, t))
+    ]);
+
+    // --- Enregistrement (RDAP) ---
+    if (rdapRes.status === 'fulfilled') {
+      const d = rdapRes.value;
+      const cree = evenement(d, 'registration');
+      const modifie = evenement(d, 'last changed');
+      const expire = evenement(d, 'expiration');
+      const titulaire = entite(d, 'registrant');
+      const ns = (d.nameservers || []).map(n => esc((n.ldhName || '').toLowerCase())).join('<br>');
+
+      let html = '';
+      html += ligne('Domaine', esc(d.ldhName ? d.ldhName.toLowerCase() : racine));
+      html += ligne('Bureau d\'enregistrement', entite(d, 'registrar') ? esc(entite(d, 'registrar')) : null);
+      html += ligne('Titulaire', titulaire ? esc(titulaire) : '<span style="color:var(--muted)">Masqué</span>');
+      html += ligne('Créé le', cree ? `${formatJour(cree)}<br><small>${anciennete(cree)}</small>` : null);
+      html += ligne('Dernière modif.', modifie ? formatJour(modifie) : null);
+      html += ligne('Expire le', expire ? formatJour(expire) : null);
+      html += ligne('Statut', (d.status || []).length ? esc(d.status.join(', ')) : null);
+      html += ligne('Serveurs DNS', ns || null);
+      domRdap.innerHTML = html;
+
+      if (cree && (Date.now() - new Date(cree)) / 86400000 < 90) {
+        domAlerte.innerHTML = '<span class="badge warn">⚠️ Domaine créé il y a moins de 3 mois</span>' +
+          '<p class="hint" style="margin-top:8px">Un site très récent qui demande de l\'argent ou des identifiants est un signal classique d\'arnaque.</p>';
+      }
+      if (!titulaire) {
+        domRdap.innerHTML += '<p class="hint" style="margin-top:10px">Le titulaire est souvent masqué : c\'est normal pour les particuliers (RGPD) et fréquent pour les entreprises.</p>';
+      }
+    } else {
+      domRdap.innerHTML = '<p class="erreur">Impossible de récupérer les infos d\'enregistrement pour ce domaine. Certaines extensions ne les publient pas en accès libre.</p>';
+    }
+
+    // --- DNS ---
+    let htmlDns = '';
+    types.forEach((t, i) => {
+      const res = dnsRes[i];
+      if (res.status !== 'fulfilled' || res.value.length === 0) return;
+      let valeurs = res.value.map(v => esc(v));
+      if (t === 'A') {
+        valeurs = res.value.map(ip => `<a href="#" data-ip="${esc(ip)}">${esc(ip)}</a>`);
+      }
+      htmlDns += ligne(TYPES_DNS[t].label, valeurs.join('<br>'));
+    });
+    domDns.innerHTML = htmlDns || '<p class="hint">Aucun enregistrement DNS trouvé. Le domaine n\'existe peut-être pas.</p>';
+    if (htmlDns && dnsRes[0].status === 'fulfilled' && dnsRes[0].value.length) {
+      domDns.innerHTML += '<p class="hint" style="margin-top:10px">Touche une adresse IPv4 pour l\'analyser dans l\'outil IP : hébergeur, pays, propriétaire.</p>';
+    }
+
+    // --- Liens externes ---
+    const q = encodeURIComponent(racine);
+    domLiens.innerHTML =
+      ligne('Sous-domaines', `<a href="https://crt.sh/?q=${q}" target="_blank" rel="noopener">crt.sh</a>`) +
+      ligne('Anciennes versions', `<a href="https://web.archive.org/web/*/${q}" target="_blank" rel="noopener">Wayback Machine</a>`) +
+      ligne('Réputation', `<a href="https://www.virustotal.com/gui/domain/${q}" target="_blank" rel="noopener">VirusTotal</a>`) +
+      ligne('Capture du site', `<a href="https://urlscan.io/search/#${q}" target="_blank" rel="noopener">urlscan.io</a>`);
+
+    domBouton.disabled = false;
+    domBouton.textContent = 'Analyser';
+  });
+
+  /* ========== Outil Image inversée ========== */
+  const invForm = document.getElementById('invForm');
+  const invInput = document.getElementById('invInput');
+  const invErreur = document.getElementById('invErreur');
+  const invResults = document.getElementById('invResults');
+  const invPreview = document.getElementById('invPreview');
+  const invMoteurs = document.getElementById('invMoteurs');
+
+  invPreview.addEventListener('error', () => { invPreview.style.display = 'none'; });
+
+  invForm.addEventListener('submit', e => {
+    e.preventDefault();
+    invErreur.classList.add('hidden');
+    const url = invInput.value.trim();
+
+    let ok = false;
+    try { ok = ['http:', 'https:'].includes(new URL(url).protocol); } catch (_) {}
+    if (!ok) {
+      invErreur.textContent = 'Colle une adresse qui commence par http:// ou https://';
+      invErreur.classList.remove('hidden');
+      invResults.classList.add('hidden');
+      return;
+    }
+
+    const u = encodeURIComponent(url);
+    const moteurs = [
+      ['Google Lens', 'objets, lieux, textes', `https://lens.google.com/uploadbyurl?url=${u}`],
+      ['Bing', 'bon complément', `https://www.bing.com/images/search?view=detailv2&iss=sbi&q=imgurl:${u}`],
+      ['Yandex', 'visages et lieux', `https://yandex.com/images/search?rpt=imageview&url=${u}`],
+      ['TinEye', 'plus ancienne version', `https://tineye.com/search?url=${u}`]
+    ];
+    invMoteurs.innerHTML = moteurs.map(([nom, desc, lien]) =>
+      `<a href="${lien}" target="_blank" rel="noopener">${nom}<small>${desc}</small></a>`).join('');
+
+    invPreview.style.display = 'block';
+    invPreview.src = url;
+    invResults.classList.remove('hidden');
+  });
+
+  /* ========== Outil Archives ========== */
+  const arcForm = document.getElementById('arcForm');
+  const arcInput = document.getElementById('arcInput');
+  const arcDate = document.getElementById('arcDate');
+  const arcBouton = document.getElementById('arcBouton');
+  const arcErreur = document.getElementById('arcErreur');
+  const arcResults = document.getElementById('arcResults');
+  const arcBadge = document.getElementById('arcBadge');
+  const arcWayback = document.getElementById('arcWayback');
+  const arcLiens = document.getElementById('arcLiens');
+
+  async function captureProche(url, horodatage) {
+    let api = 'https://archive.org/wayback/available?url=' + encodeURIComponent(url);
+    if (horodatage) api += '&timestamp=' + horodatage;
+    const r = await fetch(api);
+    const j = await r.json();
+    const c = j.archived_snapshots && j.archived_snapshots.closest;
+    return (c && c.available) ? c : null;
+  }
+
+  function dateWayback(ts) {
+    const d = new Date(Date.UTC(+ts.slice(0, 4), +ts.slice(4, 6) - 1, +ts.slice(6, 8), +ts.slice(8, 10) || 0, +ts.slice(10, 12) || 0));
+    return d.toLocaleString('fr-FR', { dateStyle: 'long', timeStyle: 'short' });
+  }
+
+  function lienCapture(c) {
+    const lien = c.url.replace(/^http:/, 'https:');
+    return `<a href="${esc(lien)}" target="_blank" rel="noopener">${dateWayback(c.timestamp)}</a>`;
+  }
+
+  arcForm.addEventListener('submit', async e => {
+    e.preventDefault();
+    arcErreur.classList.add('hidden');
+
+    let cible = arcInput.value.trim().replace(/^[a-z]+:\/\//i, '');
+    if (!/^[^\s\/]+\.[^\s\/]{2,}/.test(cible)) {
+      arcErreur.textContent = 'Entre une adresse de site ou de page. Exemple : wikipedia.org';
+      arcErreur.classList.remove('hidden');
+      return;
+    }
+
+    arcBouton.disabled = true;
+    arcBouton.textContent = '…';
+    arcResults.classList.remove('hidden');
+    arcBadge.innerHTML = '';
+    arcWayback.innerHTML = '<p class="hint">Recherche en cours…</p>';
+
+    const choisie = arcDate.value ? arcDate.value.replace(/-/g, '') : null;
+    const [premiere, derniere, aDate] = await Promise.allSettled([
+      captureProche(cible, '19960101'),
+      captureProche(cible, null),
+      choisie ? captureProche(cible, choisie) : Promise.resolve(null)
+    ]);
+
+    const p = premiere.status === 'fulfilled' ? premiere.value : null;
+    const d = derniere.status === 'fulfilled' ? derniere.value : null;
+    const a = aDate.status === 'fulfilled' ? aDate.value : null;
+
+    if (premiere.status === 'rejected' && derniere.status === 'rejected') {
+      arcWayback.innerHTML = '<p class="erreur">La Wayback Machine ne répond pas pour le moment. Réessaie dans quelques minutes, ou utilise les liens ci-dessous.</p>';
+    } else if (!p && !d) {
+      arcBadge.innerHTML = '<span class="badge warn">Aucune archive trouvée</span>';
+      arcWayback.innerHTML = '<p class="hint">Cette page n\'a jamais été archivée, ou l\'adresse est mal écrite. Essaie avec juste le nom du site.</p>';
+    } else {
+      arcBadge.innerHTML = '<span class="badge ok">Page archivée</span>';
+      let html = '';
+      if (p) html += ligne('Plus ancienne', lienCapture(p));
+      if (d) html += ligne('Plus récente', lienCapture(d));
+      if (choisie) {
+        html += ligne('Proche du ' + new Date(arcDate.value).toLocaleDateString('fr-FR', { dateStyle: 'long' }),
+          a ? lienCapture(a) : '<span style="color:var(--muted)">Aucune</span>');
+      }
+      arcWayback.innerHTML = html;
+    }
+
+    const u = encodeURIComponent(cible);
+    arcLiens.innerHTML =
+      ligne('Toutes les captures', `<a href="https://web.archive.org/web/*/${u}" target="_blank" rel="noopener">Calendrier Wayback</a>`) +
+      ligne('Autre service d\'archive', `<a href="https://archive.ph/${u}" target="_blank" rel="noopener">archive.today</a>`) +
+      ligne('Archiver maintenant', `<a href="https://web.archive.org/save/${u}" target="_blank" rel="noopener">Sauvegarder la page</a>`);
+
+    arcBouton.disabled = false;
+    arcBouton.textContent = 'Chercher';
+  });
+
+  /* ========== Outil Pseudo ========== */
+  const WORKER_PSEUDO = 'https://gojo-pseudo.kip3tchis.workers.dev/';
+
+  const psForm = document.getElementById('psForm');
+  const psInput = document.getElementById('psInput');
+  const psBouton = document.getElementById('psBouton');
+  const psErreur = document.getElementById('psErreur');
+  const psResults = document.getElementById('psResults');
+  const psCompteur = document.getElementById('psCompteur');
+  const psListe = document.getElementById('psListe');
+  const psManuel = document.getElementById('psManuel');
+  const psManuelLiens = document.getElementById('psManuelLiens');
+
+  const STATUTS = {
+    trouve:    { texte: 'Trouvé',    classe: 'warn' },
+    absent:    { texte: 'Absent',    classe: 'ok' },
+    incertain: { texte: 'Incertain', classe: 'neutre' }
+  };
+
+  const MANUELS = [
+    ['Instagram', u => `https://www.instagram.com/${u}/`],
+    ['TikTok', u => `https://www.tiktok.com/@${u}`],
+    ['X (Twitter)', u => `https://x.com/${u}`],
+    ['Facebook', u => `https://www.facebook.com/${u}`],
+    ['YouTube', u => `https://www.youtube.com/@${u}`],
+    ['Reddit', u => `https://www.reddit.com/user/${u}`],
+    ['Twitch', u => `https://www.twitch.tv/${u}`],
+    ['Pinterest', u => `https://www.pinterest.com/${u}/`],
+    ['Docker Hub', u => `https://hub.docker.com/u/${u}`],
+    ['npm', u => `https://www.npmjs.com/~${u}`]
+  ];
+
+  psForm.addEventListener('submit', async e => {
+    e.preventDefault();
+    psErreur.classList.add('hidden');
+    const pseudo = psInput.value.trim().replace(/^@/, '');
+
+    if (!/^[A-Za-z0-9._-]{2,40}$/.test(pseudo)) {
+      psErreur.textContent = 'Pseudo de 2 à 40 caractères : lettres, chiffres, point, tiret ou tiret bas.';
+      psErreur.classList.remove('hidden');
+      return;
+    }
+
+    psInput.value = pseudo;
+    psBouton.disabled = true;
+    psBouton.textContent = '…';
+    psResults.classList.remove('hidden');
+    psCompteur.innerHTML = '';
+    psListe.innerHTML = '<p class="hint">Vérification sur une quinzaine de sites, quelques secondes…</p>';
+
+    const u = encodeURIComponent(pseudo);
+    psManuelLiens.innerHTML = MANUELS.map(([nom, lien]) =>
+      `<a href="${lien(u)}" target="_blank" rel="noopener">${nom}</a>`).join('');
+    psManuel.classList.remove('hidden');
+
+    try {
+      const r = await fetch(WORKER_PSEUDO + '?u=' + u);
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.erreur || 'Erreur ' + r.status);
+
+      const ordre = { trouve: 0, incertain: 1, absent: 2 };
+      const res = j.resultats.slice().sort((a, b) => ordre[a.statut] - ordre[b.statut]);
+
+      const nb = s => res.filter(x => x.statut === s).length;
+      psCompteur.innerHTML =
+        `<span class="badge warn">${nb('trouve')} trouvé(s)</span>` +
+        `<span class="badge ok">${nb('absent')} absent(s)</span>` +
+        (nb('incertain') ? `<span class="badge neutre">${nb('incertain')} incertain(s)</span>` : '');
+
+      const categories = [...new Set(res.map(x => x.cat))];
+      psListe.innerHTML = categories.map(cat =>
+        `<div class="cat-titre">${esc(cat)}</div>` +
+        res.filter(x => x.cat === cat).map(x => {
+          const s = STATUTS[x.statut] || STATUTS.incertain;
+          const nom = x.statut === 'absent'
+            ? esc(x.nom)
+            : `<a href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.nom)}</a>`;
+          return `<div class="site ${x.statut}"><span>${nom}</span><span class="badge ${s.classe}">${s.texte}</span></div>`;
+        }).join('')
+      ).join('');
+    } catch (err) {
+      psListe.innerHTML = '<p class="erreur">Le service de vérification ne répond pas. Réessaie dans un instant.</p>';
+    }
+
+    psBouton.disabled = false;
+    psBouton.textContent = 'Vérifier';
+  });
+
+  /* ========== Outil Lien suspect ========== */
+  const WORKER_LIEN = WORKER_PSEUDO + 'lien?url=';
+
+  const lienForm = document.getElementById('lienForm');
+  const lienInput = document.getElementById('lienInput');
+  const lienBouton = document.getElementById('lienBouton');
+  const lienErreur = document.getElementById('lienErreur');
+  const lienResults = document.getElementById('lienResults');
+  const lienVerdict = document.getElementById('lienVerdict');
+  const lienSignaux = document.getElementById('lienSignaux');
+  const lienFinale = document.getElementById('lienFinale');
+  const lienEtapes = document.getElementById('lienEtapes');
+  const lienVersDomaine = document.getElementById('lienVersDomaine');
+
+  const RACCOURCISSEURS = ['bit.ly', 'tinyurl.com', 't.co', 'goo.gl', 'ow.ly', 'is.gd', 'cutt.ly', 'rebrand.ly',
+    'shorturl.at', 'tiny.cc', 's.id', 'rb.gy', 't.ly', 'buff.ly', 'lnkd.in', 'shorturl.com', 'v.gd', 'qrco.de', 'urlz.fr', 'bit.do'];
+
+  const EXTENSIONS_RISQUEES = ['xyz', 'top', 'icu', 'click', 'live', 'shop', 'online', 'site', 'buzz', 'cfd', 'sbs',
+    'rest', 'cyou', 'monster', 'quest', 'cam', 'fun', 'lol', 'mom', 'bond', 'support', 'help', 'info', 'vip',
+    'pro', 'cc', 'tk', 'ml', 'ga', 'cf', 'gq', 'work', 'link', 'biz', 'life', 'win', 'loan', 'mobi', 'today', 'world'];
+
+  // Marques souvent imitées → leurs vrais domaines
+  const MARQUES = {
+    laposte: ['laposte.fr', 'laposte.net', 'labanquepostale.fr'],
+    labanquepostale: ['labanquepostale.fr'],
+    colissimo: ['colissimo.fr', 'laposte.fr'],
+    chronopost: ['chronopost.fr'],
+    mondialrelay: ['mondialrelay.fr', 'mondialrelay.com'],
+    ameli: ['ameli.fr'],
+    impots: ['impots.gouv.fr'],
+    antai: ['antai.gouv.fr'],
+    francetravail: ['francetravail.fr'],
+    vinted: ['vinted.fr', 'vinted.com'],
+    leboncoin: ['leboncoin.fr'],
+    dhl: ['dhl.com', 'dhl.fr', 'dhl.de'],
+    fedex: ['fedex.com'],
+    paypal: ['paypal.com', 'paypal.fr', 'paypal.me'],
+    amazon: ['amazon.fr', 'amazon.com', 'amazon.de', 'amazon.co.uk'],
+    netflix: ['netflix.com'],
+    apple: ['apple.com', 'icloud.com'],
+    icloud: ['icloud.com', 'apple.com'],
+    microsoft: ['microsoft.com', 'live.com', 'office.com', 'outlook.com'],
+    whatsapp: ['whatsapp.com', 'whatsapp.net'],
+    instagram: ['instagram.com'],
+    facebook: ['facebook.com', 'fb.com'],
+    boursorama: ['boursorama.com', 'boursorama-banque.com'],
+    creditagricole: ['credit-agricole.fr', 'credit-agricole.com'],
+    societegenerale: ['societegenerale.fr', 'societegenerale.com'],
+    bnpparibas: ['bnpparibas', 'bnpparibas.net', 'bnpparibas.com', 'mabanque.bnpparibas'],
+    engie: ['engie.fr', 'engie.com']
+  };
+
+  const MOTS_APPATS = ['colis', 'livraison', 'suivi', 'paiement', 'payment', 'frais', 'amende', 'remboursement',
+    'verify', 'verification', 'login', 'secure', 'securite', 'compte', 'update', 'confirm', 'carte', 'vitale',
+    'urge', 'urgent', 'relais', 'douane', 'track'];
+
+  const SUFFIXES_DOUBLES = ['gouv.fr', 'asso.fr', 'co.uk', 'org.uk', 'com.au', 'co.jp', 'com.br', 'co.nz', 'co.za', 'com.tr'];
+
+  // Plateformes d'hébergement : chaque sous-domaine est le site de quelqu'un de différent
+  const PLATEFORMES = ['appspot.com', 'github.io', 'herokuapp.com', 'vercel.app', 'netlify.app', 'pages.dev',
+    'workers.dev', 'web.app', 'firebaseapp.com', 'blogspot.com', 'wordpress.com', 'wixsite.com', 'wixstudio.io',
+    'azurewebsites.net', 'cloudfront.net', 'onrender.com', 'glitch.me', 'weebly.com', '000webhostapp.com',
+    'ngrok-free.app', 'ngrok.io', 'replit.app', 'repl.co', 'framer.website', 'webflow.io', 'square.site',
+    'godaddysites.com', 'r2.dev', 'storage.googleapis.com', 'firebasestorage.googleapis.com', 'translate.goog',
+    'duckdns.org', 'ddns.net', 'mystrikingly.com', 'carrd.co', 'gitbook.io', 'surge.sh', 'fly.dev',
+    'railway.app', 'myshopify.com', 'jimdosite.com', 'site123.me', 'sharepoint.com', 'my.canva.site', 'notion.site'];
+
+  function plateformeDe(h) {
+    return PLATEFORMES.find(p => h === p || h.endsWith('.' + p)) || null;
+  }
+
+  function domaineRacine(h) {
+    const pf = plateformeDe(h);
+    if (pf && h !== pf) {
+      const reste = h.slice(0, -pf.length - 1).split('.');
+      return reste[reste.length - 1] + '.' + pf;
+    }
+    const p = h.split('.');
+    if (p.length <= 2) return h;
+    const d2 = p.slice(-2).join('.');
+    return SUFFIXES_DOUBLES.includes(d2) ? p.slice(-3).join('.') : d2;
+  }
+
+  function signauxUrl(texte) {
+    const s = [];
+    let u;
+    try { u = new URL(texte); } catch (_) { return s; }
+    const h = u.hostname.toLowerCase();
+    const racine = domaineRacine(h);
+    const tld = h.split('.').pop();
+
+    if (/^\d{1,3}(\.\d{1,3}){3}$/.test(h) || h.startsWith('[')) {
+      s.push(['danger', `Adresse IP brute (${esc(h)}) à la place d'un nom de site : les vrais services n'utilisent jamais ça.`]);
+    }
+    if (h.includes('xn--')) {
+      s.push(['danger', `Nom de domaine avec des caractères déguisés (${esc(h)}) : il peut imiter un site connu avec des lettres d'un autre alphabet.`]);
+    }
+    if (u.username || u.password) {
+      s.push(['danger', 'Le lien contient un « @ » avant le site : tout ce qui précède est un leurre, le vrai site est après.']);
+    }
+    const hSansTiret = h.replace(/-/g, '');
+    for (const [marque, officiels] of Object.entries(MARQUES)) {
+      if (hSansTiret.includes(marque) && !officiels.includes(racine)) {
+        s.push(['danger', `Le nom « ${marque} » apparaît, mais le site est <strong>${esc(racine)}</strong>, qui n'appartient pas à cette marque.`]);
+        break;
+      }
+    }
+    const pf = plateformeDe(h);
+    if (pf) {
+      s.push(['info', `Site hébergé sur une plateforme gratuite (${esc(pf)}) : n'importe qui peut y créer une page en quelques minutes, y compris des arnaqueurs.`]);
+    }
+    if (RACCOURCISSEURS.includes(h) || RACCOURCISSEURS.includes(racine)) {
+      s.push(['info', `Raccourcisseur de lien (${esc(racine)}) : il cache la vraie destination.`]);
+    }
+    if (EXTENSIONS_RISQUEES.includes(tld)) {
+      s.push(['attention', `Extension « .${esc(tld)} » : bon marché et très utilisée par les arnaques.`]);
+    }
+    if (u.protocol === 'http:') {
+      s.push(['attention', 'Connexion non chiffrée (http) : à éviter absolument pour saisir des informations.']);
+    }
+    const etiquette = racine.split('.')[0];
+    if (/\d{4,}/.test(etiquette) || (/\d/.test(etiquette) && /[a-z]/.test(etiquette) && etiquette.replace(/\D/g, '').length >= 3)) {
+      s.push(['attention', `Nom de domaine avec une suite de chiffres (${esc(etiquette)}) : typique des domaines jetables créés en série.`]);
+    }
+    if (h.split('.').length > 4) {
+      s.push(['attention', `Beaucoup de sous-domaines (${esc(h)}) : technique pour faire croire à un site officiel.`]);
+    }
+    const bas = (h + u.pathname).toLowerCase();
+    const mots = MOTS_APPATS.filter(m => bas.includes(m));
+    if (mots.length) {
+      s.push(['info', `Mots souvent utilisés dans les arnaques : ${mots.map(esc).join(', ')}.`]);
+    }
+    return s;
+  }
+
+  const NIVEAUX = {
+    danger:    { badge: 'danger', texte: 'Danger' },
+    attention: { badge: 'warn',   texte: 'Attention' },
+    info:      { badge: 'neutre', texte: 'Info' }
+  };
+
+  function libelleEtape(e) {
+    if (e.type === 'http') return `Redirection (${e.statut})`;
+    if (e.type === 'meta') return 'Redirection cachée dans la page';
+    if (e.type === 'injoignable') return 'Site injoignable';
+    if (e.type === 'bloque') return 'Adresse bloquée';
+    if (e.statut >= 400) return `Arrivée — erreur ${e.statut}`;
+    return `Arrivée (${e.statut})`;
+  }
+
+  let lienDomaineFinal = null;
+  lienVersDomaine.addEventListener('click', () => {
+    if (!lienDomaineFinal) return;
+    document.querySelector('nav button[data-tool="domaine"]').click();
+    domInput.value = lienDomaineFinal;
+    domForm.requestSubmit();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
+  lienForm.addEventListener('submit', async e => {
+    e.preventDefault();
+    lienErreur.classList.add('hidden');
+    let texte = lienInput.value.trim();
+    if (texte && !/^[a-z]+:\/\//i.test(texte)) texte = 'https://' + texte;
+
+    let ok = false;
+    try { const u = new URL(texte); ok = ['http:', 'https:'].includes(u.protocol) && u.hostname.includes('.'); } catch (_) {}
+    if (!ok) {
+      lienErreur.textContent = 'Ça ne ressemble pas à un lien. Exemple : https://bit.ly/abc123';
+      lienErreur.classList.remove('hidden');
+      return;
+    }
+
+    lienInput.value = texte;
+    lienBouton.disabled = true;
+    lienBouton.textContent = '…';
+    lienResults.classList.remove('hidden');
+    lienVerdict.textContent = 'Analyse en cours…';
+    lienSignaux.innerHTML = '';
+    lienFinale.innerHTML = '';
+    lienEtapes.innerHTML = '<p class="hint">Suivi des redirections…</p>';
+    lienVersDomaine.classList.add('hidden');
+    lienDomaineFinal = null;
+
+    // 1) Suivre les redirections via le Worker
+    let res = null;
+    try {
+      const r = await fetch(WORKER_LIEN + encodeURIComponent(texte));
+      res = await r.json();
+    } catch (_) {
+      res = { etapes: [], erreur: 'Le service de suivi ne répond pas.' };
+    }
+    const etapes = res.etapes || [];
+    const finale = res.finale || (etapes.length ? etapes[etapes.length - 1].url : texte);
+
+    // 2) Chemin
+    lienEtapes.innerHTML = etapes.length
+      ? etapes.map((et, i) => `<div class="etape"><strong>${i + 1}.</strong> ${libelleEtape(et)}<code>${esc(et.url)}</code></div>`).join('')
+      : '<p class="hint">Aucune étape récupérée.</p>';
+    if (res.erreur) lienEtapes.innerHTML += `<p class="erreur" style="margin-top:8px">${esc(res.erreur)}</p>`;
+
+    // 3) Signaux sur toutes les adresses du chemin
+    const adresses = [texte, ...etapes.map(et => et.url)];
+    const vus = new Set();
+    const signaux = [];
+    adresses.forEach(a => signauxUrl(a).forEach(([niv, msg]) => {
+      if (!vus.has(msg)) { vus.add(msg); signaux.push([niv, msg]); }
+    }));
+    // Google Safe Browsing (base de Chrome / Android)
+    const sb = res.safeBrowsing || { statut: 'indisponible', menaces: [] };
+    const TYPES_MENACE = {
+      SOCIAL_ENGINEERING: 'hameçonnage (faux site pour voler tes informations)',
+      MALWARE: 'logiciel malveillant',
+      UNWANTED_SOFTWARE: 'logiciel indésirable',
+      POTENTIALLY_HARMFUL_APPLICATION: 'application dangereuse'
+    };
+    if (sb.statut === 'menace') {
+      const types = [...new Set(sb.menaces.map(m => TYPES_MENACE[m.type] || m.type))];
+      signaux.unshift(['danger', `<strong>Signalé par Google Safe Browsing</strong> : ${types.map(esc).join(', ')}. C'est la même base qui affiche la page rouge « Site dangereux » dans Chrome.`]);
+    } else if (sb.statut === 'ok') {
+      signaux.push(['info', 'Google Safe Browsing : aucun signalement. Les arnaques de moins de quelques jours n\'y figurent pas toujours encore.']);
+    } else {
+      signaux.push(['info', 'Vérification Google Safe Browsing indisponible pour le moment : seules les règles de l\'app ont été appliquées.']);
+    }
+
+    const redirs = etapes.filter(et => et.type === 'http' || et.type === 'meta').length;
+    if (redirs >= 3) signaux.push(['attention', `${redirs} redirections successives : technique fréquente pour brouiller les pistes.`]);
+
+    // 4) Destination finale + âge du domaine
+    let hFinal = null;
+    try { hFinal = new URL(finale).hostname.toLowerCase(); } catch (_) {}
+    let htmlFin = '';
+    if (hFinal) {
+      const racine = domaineRacine(hFinal);
+      lienDomaineFinal = racine;
+      htmlFin += ligne('Site', esc(hFinal));
+      if (res.titre) htmlFin += ligne('Titre de la page', esc(res.titre));
+      const pfFinal = plateformeDe(hFinal);
+      if (pfFinal) htmlFin += ligne('Hébergé sur', esc(pfFinal) + '<br><small>l\'âge de la plateforme ne dit rien sur ce site</small>');
+      if (!pfFinal) try {
+        const d = await lireRdap(racine);
+        const cree = evenement(d, 'registration');
+        if (cree) {
+          htmlFin += ligne('Domaine créé le', `${formatJour(cree)}<br><small>${anciennete(cree)}</small>`);
+          const jours = (Date.now() - new Date(cree)) / 86400000;
+          if (jours < 90) signaux.unshift(['danger', `Le domaine ${esc(racine)} a été créé il y a seulement ${Math.max(0, Math.round(jours))} jours.`]);
+          else if (jours < 365) signaux.push(['attention', `Domaine récent (${anciennete(cree)}) : les sites d'arnaque vivent rarement plus de quelques mois.`]);
+        }
+      } catch (_) {}
+      if (!pfFinal && hFinal !== racine && !hFinal.startsWith('www.')) {
+        try {
+          const essai = 'gojo-' + Math.random().toString(36).slice(2, 10) + '.' + racine;
+          const ips = await lireDns(essai, 'A');
+          if (ips.length) {
+            const prefixe = hFinal.slice(0, -racine.length - 1);
+            signaux.push(['attention', `Ce site répond à <em>n'importe quel</em> sous-domaine : le début du lien (« ${esc(prefixe)} ») a probablement été fabriqué pour toi, avec ton nom ou un identifiant.`]);
+          }
+        } catch (_) {}
+      }
+      const q = encodeURIComponent(finale);
+      htmlFin += ligne('Réputation', `<a href="https://www.virustotal.com/gui/search/${q}" target="_blank" rel="noopener">VirusTotal</a> · <a href="https://urlscan.io/search/#${encodeURIComponent(racine)}" target="_blank" rel="noopener">urlscan.io</a>`);
+      lienVersDomaine.classList.remove('hidden');
+    }
+    lienFinale.innerHTML = htmlFin || '<p class="hint">Destination inconnue.</p>';
+
+    // 5) Verdict
+    const ordre = { danger: 0, attention: 1, info: 2 };
+    signaux.sort((a, b) => ordre[a[0]] - ordre[b[0]]);
+    const score = signaux.reduce((t, s) => t + (s[0] === 'danger' ? 3 : s[0] === 'attention' ? 1 : 0), 0);
+    lienVerdict.innerHTML = sb.statut === 'menace'
+      ? '🚩 Site dangereux confirmé : n\'ouvre surtout pas ce lien'
+      : score >= 3
+      ? '🚩 Très suspect : ne saisis aucune information'
+      : score >= 1
+        ? '⚠️ Prudence : quelques signaux inhabituels'
+        : '🔍 Aucun signal détecté';
+    lienSignaux.innerHTML = signaux.map(([niv, msg]) => `<div class="signal"><span class="badge ${NIVEAUX[niv].badge}">${NIVEAUX[niv].texte}</span><span>${msg}</span></div>`).join('');
+    if (score === 0 && sb.statut !== 'menace') {
+      lienSignaux.innerHTML += '<p class="hint" style="margin:10px 0 0">Ça ne prouve pas que le lien est sûr. <strong>Un lien inconnu reçu par SMS reste suspect par défaut</strong> : en cas de doute, passe par le site ou l\'appli officielle plutôt que par le lien.</p>';
+    }
+
+    lienBouton.disabled = false;
+    lienBouton.textContent = 'Analyser';
+  });
+
+  /* ========== Outil Adresse IP ========== */
+  const ipForm = document.getElementById('ipForm');
+  const ipInput = document.getElementById('ipInput');
+  const ipBouton = document.getElementById('ipBouton');
+  const ipMoi = document.getElementById('ipMoi');
+  const ipErreur = document.getElementById('ipErreur');
+  const ipResults = document.getElementById('ipResults');
+  const ipBadges = document.getElementById('ipBadges');
+  const ipType = document.getElementById('ipType');
+  const ipGeo = document.getElementById('ipGeo');
+  const ipProprio = document.getElementById('ipProprio');
+  const ipLiens = document.getElementById('ipLiens');
+
+  const RE_IPV4 = /^(25[0-5]|2[0-4]\d|1?\d?\d)(\.(25[0-5]|2[0-4]\d|1?\d?\d)){3}$/;
+
+  function estIPv6(s) {
+    if (!s.includes(':') || !/^[0-9a-f:.]+$/i.test(s)) return false;
+    try { new URL('http://[' + s + ']/'); return true; } catch (_) { return false; }
+  }
+
+  function developperIPv6(ip) {
+    let [g, d] = ip.toLowerCase().split('::');
+    const gauche = g ? g.split(':') : [];
+    const droite = d !== undefined && d ? d.split(':') : [];
+    const manque = 8 - gauche.length - droite.length;
+    const tout = d !== undefined ? [...gauche, ...Array(manque).fill('0'), ...droite] : gauche;
+    return tout.map(x => x.padStart(4, '0')).join('');
+  }
+
+  function nomInverse(ip) {
+    if (RE_IPV4.test(ip)) return ip.split('.').reverse().join('.') + '.in-addr.arpa';
+    return developperIPv6(ip).split('').reverse().join('.') + '.ip6.arpa';
+  }
+
+  function ipPrivee(ip) {
+    if (RE_IPV4.test(ip)) {
+      const [a, b] = ip.split('.').map(Number);
+      if (a === 10 || a === 127 || a === 0) return 'locale';
+      if (a === 192 && b === 168) return 'locale';
+      if (a === 172 && b >= 16 && b <= 31) return 'locale';
+      if (a === 169 && b === 254) return 'locale';
+      if (a === 100 && b >= 64 && b <= 127) return 'opérateur (CGNAT)';
+      return null;
+    }
+    const x = developperIPv6(ip);
+    if (x === '0'.repeat(31) + '1') return 'locale';
+    if (/^f[cd]/.test(x) || /^fe[89ab]/.test(x)) return 'locale';
+    return null;
+  }
+
+  // Mots typiques des hébergeurs, datacenters et VPN
+  const HEBERGEURS = ['amazon', 'aws', 'google', 'microsoft', 'azure', 'ovh', 'hetzner', 'digitalocean', 'linode',
+    'akamai', 'cloudflare', 'vultr', 'choopa', 'contabo', 'scaleway', 'online s.a.s', 'ionos', '1&1', 'oracle',
+    'alibaba', 'tencent', 'leaseweb', 'm247', 'datacamp', 'cdn77', 'hostinger', 'godaddy', 'hosting', 'host',
+    'data center', 'datacenter', 'server', 'cloud', 'vps', 'colocation', 'fastly', 'zenlayer', 'psychz',
+    'quadranet', 'servers.com', 'packethub', 'tzulo', 'clouvider', 'nforce', 'worldstream', 'ipxo', 'hostroyale'];
+  const VPN_CONNUS = ['m247', 'datacamp', 'cdn77', 'packethub', 'tzulo', 'clouvider', 'nordvpn', 'expressvpn',
+    'surfshark', 'proton', 'mullvad', 'private internet access', 'cyberghost', 'ipvanish', 'hidemyass', 'windscribe'];
+  const FAI_FR = ['orange', 'free', 'proxad', 'sfr', 'bouygues', 'numericable', 'red by sfr', 'sosh', 'nordnet',
+    'k-net', 'coriolis', 'videofutur'];
+
+  async function geoIP(ip) {
+    try {
+      const r = await fetch('https://ipwho.is/' + encodeURIComponent(ip || ''));
+      const j = await r.json();
+      if (j.success === false) throw new Error(j.message || 'ipwho');
+      return {
+        ip: j.ip, pays: j.country, code: j.country_code, drapeau: j.flag && j.flag.emoji, region: j.region,
+        ville: j.city, lat: j.latitude, lon: j.longitude, asn: j.connection && j.connection.asn,
+        org: j.connection && (j.connection.org || j.connection.isp), fai: j.connection && j.connection.isp,
+        fuseau: j.timezone && j.timezone.id, source: 'ipwho.is'
+      };
+    } catch (_) {
+      const r = await fetch('https://ipapi.co/' + (ip ? encodeURIComponent(ip) + '/' : '') + 'json/');
+      const j = await r.json();
+      if (j.error) throw new Error(j.reason || 'ipapi');
+      return {
+        ip: j.ip, pays: j.country_name, code: j.country_code, region: j.region, ville: j.city,
+        lat: j.latitude, lon: j.longitude, asn: j.asn ? String(j.asn).replace(/^AS/i, '') : null,
+        org: j.org, fai: j.org, fuseau: j.timezone, source: 'ipapi.co'
+      };
+    }
+  }
+
+  function chercherEntite(entites, role) {
+    for (const e of entites || []) {
+      if ((e.roles || []).includes(role)) return e;
+      const sous = chercherEntite(e.entities, role);
+      if (sous) return sous;
+    }
+    return null;
+  }
+  function champVcard(e, champ) {
+    const v = e && e.vcardArray && e.vcardArray[1];
+    const f = v && v.find(x => x[0] === champ);
+    return f ? f[3] : null;
+  }
+
+  async function analyserIP(ip) {
+    ipErreur.classList.add('hidden');
+    ipBouton.disabled = true; ipMoi.disabled = true;
+    ipBouton.textContent = '…';
+    ipResults.classList.remove('hidden');
+    ipBadges.innerHTML = '';
+    ipType.innerHTML = '<p class="hint">Analyse en cours…</p>';
+    ipGeo.innerHTML = ''; ipProprio.innerHTML = ''; ipLiens.innerHTML = '';
+
+    let geo = null;
+    try { geo = await geoIP(ip); } catch (_) {}
+    if (!ip) {
+      if (!geo) {
+        ipType.innerHTML = '<p class="erreur">Impossible de récupérer ton adresse pour le moment.</p>';
+        ipBouton.disabled = false; ipMoi.disabled = false; ipBouton.textContent = 'Analyser';
+        return;
+      }
+      ip = geo.ip;
+      ipInput.value = ip;
+    }
+
+    const [rdapRes, ptrRes, torRes] = await Promise.allSettled([
+      fetch('https://rdap.org/ip/' + encodeURIComponent(ip)).then(r => { if (!r.ok) throw 0; return r.json(); }),
+      fetch(`https://dns.google/resolve?name=${encodeURIComponent(nomInverse(ip))}&type=PTR`).then(r => r.json()),
+      fetch(`https://onionoo.torproject.org/details?search=${encodeURIComponent(ip)}&fields=nickname,flags,running`).then(r => r.json())
+    ]);
+
+    const rdap = rdapRes.status === 'fulfilled' ? rdapRes.value : null;
+    const ptr = ptrRes.status === 'fulfilled' ? ((ptrRes.value.Answer || []).filter(a => a.type === 12).map(a => a.data.replace(/\.$/, ''))[0] || null) : null;
+    const relais = torRes.status === 'fulfilled' ? (torRes.value.relays || []) : [];
+    const sortieTor = relais.some(r => (r.flags || []).includes('Exit'));
+
+    // --- Type de connexion ---
+    const proprioRdap = rdap ? (champVcard(chercherEntite(rdap.entities, 'registrant'), 'fn') || rdap.name) : null;
+    const texteOrg = [geo && geo.org, geo && geo.fai, proprioRdap, rdap && rdap.name, ptr].filter(Boolean).join(' ').toLowerCase();
+    const estVpn = VPN_CONNUS.some(m => texteOrg.includes(m));
+    const estHebergeur = HEBERGEURS.some(m => texteOrg.includes(m));
+    const estFaiFr = FAI_FR.some(m => texteOrg.includes(m)) && !estHebergeur;
+
+    const badges = [];
+    let explication = '';
+    if (sortieTor) {
+      badges.push('<span class="badge danger">🧅 Sortie Tor</span>');
+      explication = 'Cette adresse est une <strong>sortie du réseau Tor</strong> : la personne derrière est volontairement anonyme, son adresse réelle est impossible à connaître.';
+    } else if (relais.length) {
+      badges.push('<span class="badge warn">🧅 Relais Tor</span>');
+      explication = 'Cette adresse fait tourner un relais du réseau Tor (sans être une sortie).';
+    } else if (estVpn) {
+      badges.push('<span class="badge warn">🛡️ VPN probable</span>');
+      explication = 'Le propriétaire est connu pour louer des serveurs à des <strong>services de VPN</strong>. La vraie personne est ailleurs, cachée derrière.';
+    } else if (estHebergeur) {
+      badges.push('<span class="badge warn">🏢 Hébergeur / datacenter</span>');
+      explication = 'Adresse d\'un <strong>serveur</strong> (site web, VPN, proxy, robot…), pas d\'une connexion personnelle. Si quelqu\'un t\'écrit depuis là, il passe probablement par un intermédiaire.';
+    } else if (estFaiFr) {
+      badges.push('<span class="badge ok">🏠 Fournisseur d\'accès grand public</span>');
+      explication = 'Connexion d\'un <strong>abonné box ou mobile</strong> d\'un opérateur. Seul l\'opérateur sait qui c\'est, et il ne le révèle qu\'à la justice.';
+    } else {
+      badges.push('<span class="badge neutre">❔ Type indéterminé</span>');
+      explication = 'Probablement un fournisseur d\'accès ou une entreprise. Regarde le propriétaire ci-dessous pour te faire une idée.';
+    }
+    if (ip.includes(':')) badges.push('<span class="badge neutre">IPv6</span>');
+    ipBadges.innerHTML = badges.join('');
+    ipType.innerHTML = `<p style="margin:0 0 8px">${explication}</p>` +
+      ligne('Adresse', esc(ip)) +
+      ligne('Nom inversé', ptr ? esc(ptr) : '<span style="color:var(--muted)">aucun</span>') +
+      (relais[0] ? ligne('Nom du relais Tor', esc(relais[0].nickname)) : '');
+
+    // --- Localisation ---
+    if (geo && geo.ip === ip) {
+      const lieu = [geo.ville, geo.region].filter(Boolean).map(esc).join(', ');
+      ipGeo.innerHTML =
+        ligne('Pays', `${geo.drapeau ? geo.drapeau + ' ' : ''}${esc(geo.pays || '?')}`) +
+        ligne('Zone', lieu || null) +
+        ligne('Fuseau horaire', geo.fuseau ? esc(geo.fuseau) : null) +
+        ligne('Réseau (ASN)', geo.asn ? `AS${esc(geo.asn)}${geo.org ? ' — ' + esc(geo.org) : ''}` : (geo.org ? esc(geo.org) : null)) +
+        ((typeof geo.lat === 'number' && typeof geo.lon === 'number')
+          ? ligne('Carte', `<a href="https://www.openstreetmap.org/?mlat=${geo.lat}&mlon=${geo.lon}#map=9/${geo.lat}/${geo.lon}" target="_blank" rel="noopener">Voir la zone (approximative)</a>`)
+          : '') +
+        ligne('Source', `<small>${esc(geo.source)}</small>`);
+    } else {
+      ipGeo.innerHTML = '<p class="hint">Localisation indisponible pour le moment.</p>';
+    }
+
+    // --- Propriétaire officiel (RDAP) ---
+    if (rdap) {
+      const abuse = chercherEntite(rdap.entities, 'abuse');
+      const mailAbuse = champVcard(abuse, 'email');
+      ipProprio.innerHTML =
+        ligne('Propriétaire', proprioRdap ? esc(proprioRdap) : null) +
+        ligne('Nom du bloc', rdap.name ? esc(rdap.name) : null) +
+        ligne('Plage', rdap.startAddress && rdap.endAddress ? `${esc(rdap.startAddress)}<br>→ ${esc(rdap.endAddress)}` : null) +
+        ligne('Pays déclaré', rdap.country ? esc(rdap.country) : null) +
+        ligne('Signaler un abus', mailAbuse ? `<a href="mailto:${esc(mailAbuse)}">${esc(mailAbuse)}</a>` : null);
+      if (mailAbuse) ipProprio.innerHTML += '<p class="hint" style="margin-top:10px">L\'adresse « abuse » sert à signaler une attaque, du spam ou une arnaque venant de cette IP à son propriétaire.</p>';
+    } else {
+      ipProprio.innerHTML = '<p class="hint">Registre injoignable pour le moment.</p>';
+    }
+
+    // --- Liens ---
+    const q = encodeURIComponent(ip);
+    ipLiens.innerHTML =
+      ligne('Signalements d\'abus', `<a href="https://www.abuseipdb.com/check/${q}" target="_blank" rel="noopener">AbuseIPDB</a>`) +
+      ligne('Réputation', `<a href="https://www.virustotal.com/gui/ip-address/${q}" target="_blank" rel="noopener">VirusTotal</a>`) +
+      ligne('Services ouverts', `<a href="https://www.shodan.io/host/${q}" target="_blank" rel="noopener">Shodan</a>`);
+
+    ipBouton.disabled = false; ipMoi.disabled = false;
+    ipBouton.textContent = 'Analyser';
+  }
+
+  ipForm.addEventListener('submit', e => {
+    e.preventDefault();
+    const ip = ipInput.value.trim().replace(/^\[|\]$/g, '');
+    if (!RE_IPV4.test(ip) && !estIPv6(ip)) {
+      ipErreur.textContent = 'Ça ne ressemble pas à une adresse IP. Exemple : 8.8.8.8';
+      ipErreur.classList.remove('hidden');
+      return;
+    }
+    const privee = ipPrivee(ip);
+    if (privee) {
+      ipErreur.innerHTML = privee === 'locale'
+        ? 'Adresse <strong>locale</strong> : elle n\'existe qu\'à l\'intérieur d\'un réseau (ta box, une entreprise…). Elle n\'est pas visible sur Internet et ne peut pas être localisée.'
+        : 'Adresse <strong>partagée par un opérateur</strong> (CGNAT) entre de nombreux abonnés : impossible d\'en tirer quoi que ce soit de l\'extérieur.';
+      ipErreur.classList.remove('hidden');
+      ipResults.classList.add('hidden');
+      return;
+    }
+    analyserIP(ip);
+  });
+
+  ipMoi.addEventListener('click', () => { ipInput.value = ''; analyserIP(null); });
+
+  // Depuis l'outil Domaine : toucher une IP l'ouvre ici
+  document.addEventListener('click', e => {
+    const lien = e.target.closest('a[data-ip]');
+    if (!lien) return;
+    e.preventDefault();
+    document.querySelector('nav button[data-tool="ip"]').click();
+    ipInput.value = lien.dataset.ip;
+    ipForm.requestSubmit();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
+  /* ========== Outil E-mail ========== */
+  const mailForm = document.getElementById('mailForm');
+  const mailInput = document.getElementById('mailInput');
+  const mailBouton = document.getElementById('mailBouton');
+  const mailErreur = document.getElementById('mailErreur');
+  const mailResults = document.getElementById('mailResults');
+  const mailVerdict = document.getElementById('mailVerdict');
+  const mailSignaux = document.getElementById('mailSignaux');
+  const mailDetails = document.getElementById('mailDetails');
+  const mailAvatar = document.getElementById('mailAvatar');
+  const mailGravatar = document.getElementById('mailGravatar');
+
+  const MESSAGERIES_GRATUITES = ['gmail.com', 'googlemail.com', 'outlook.com', 'outlook.fr', 'hotmail.com', 'hotmail.fr',
+    'live.com', 'live.fr', 'msn.com', 'yahoo.com', 'yahoo.fr', 'ymail.com', 'icloud.com', 'me.com', 'mac.com',
+    'aol.com', 'aol.fr', 'orange.fr', 'wanadoo.fr', 'free.fr', 'sfr.fr', 'neuf.fr', 'laposte.net', 'gmx.com', 'gmx.fr',
+    'gmx.de', 'proton.me', 'protonmail.com', 'pm.me', 'tutanota.com', 'tuta.io', 'mail.com', 'bbox.fr',
+    'numericable.fr', 'yandex.com', 'yandex.ru', 'mail.ru', 'zoho.com'];
+
+  // Liste de secours si la grande liste en ligne ne se charge pas
+  const JETABLES_SECOURS = ['yopmail.com', 'yopmail.fr', 'yopmail.net', 'mailinator.com', 'guerrillamail.com',
+    'guerrillamail.info', 'sharklasers.com', 'grr.la', '10minutemail.com', '10minutemail.net', 'temp-mail.org',
+    'tempmail.com', 'trashmail.com', 'trashmail.fr', 'jetable.org', 'mail.tm', 'getnada.com', 'dispostable.com',
+    'maildrop.cc', 'throwawaymail.com', 'mohmal.com', 'emailondeck.com', 'mytemp.email', 'tempr.email',
+    'discard.email', 'mailnesia.com', 'spamgourmet.com', 'mintemail.com', 'fakeinbox.com', 'tempail.com',
+    'burnermail.io', 'mailcatch.com', 'inboxkitten.com', 'emailfake.com', 'crazymailing.com', 'tmpmail.org'];
+
+  let jetablesComplets = null;
+  async function listeJetables() {
+    if (jetablesComplets) return jetablesComplets;
+    try {
+      const r = await fetch('https://cdn.jsdelivr.net/gh/disposable-email-domains/disposable-email-domains@main/disposable_email_blocklist.conf');
+      if (!r.ok) throw 0;
+      const t = await r.text();
+      jetablesComplets = new Set(t.split('\n').map(x => x.trim().toLowerCase()).filter(Boolean));
+      JETABLES_SECOURS.forEach(d => jetablesComplets.add(d));
+      return jetablesComplets;
+    } catch (_) {
+      return new Set(JETABLES_SECOURS);
+    }
+  }
+
+  const FOURNISSEURS_MX = [
+    ['google.com', 'Google (Gmail / Workspace)'], ['googlemail.com', 'Google (Gmail / Workspace)'],
+    ['outlook.com', 'Microsoft (Outlook / 365)'], ['hotmail.com', 'Microsoft (Outlook)'],
+    ['protonmail.ch', 'Proton Mail'], ['proton.me', 'Proton Mail'], ['yahoodns.net', 'Yahoo'],
+    ['icloud.com', 'Apple iCloud'], ['me.com', 'Apple iCloud'], ['ovh.net', 'OVH'], ['orange.fr', 'Orange'],
+    ['free.fr', 'Free'], ['sfr.fr', 'SFR'], ['laposte.net', 'La Poste'], ['gandi.net', 'Gandi'],
+    ['ionos', 'IONOS'], ['1and1', 'IONOS'], ['zoho', 'Zoho'], ['mimecast', 'Mimecast (filtrage pro)'],
+    ['pphosted.com', 'Proofpoint (filtrage pro)'], ['messagelabs.com', 'Broadcom (filtrage pro)'],
+    ['mailgun.org', 'Mailgun (service d\'envoi)'], ['sendgrid.net', 'SendGrid (service d\'envoi)'],
+    ['yopmail', 'YOPmail (jetable)'], ['mailinator', 'Mailinator (jetable)'], ['guerrillamail', 'Guerrilla Mail (jetable)']
+  ];
+  function fournisseurDe(mx) {
+    for (const [cle, nom] of FOURNISSEURS_MX) if (mx.some(m => m.includes(cle))) return nom;
+    return null;
+  }
+
+  const MOTS_OFFICIELS = [...Object.keys(MARQUES), 'banque', 'gendarmerie', 'police', 'douane', 'tresorpublic',
+    'gouv', 'administration', 'impot'];
+  const MOTS_GENERIQUES = ['servicesclient', 'serviceclient', 'support', 'securite', 'security', 'noreply', 'helpdesk'];
+
+  async function sha256(texte) {
+    const tampon = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(texte));
+    return [...new Uint8Array(tampon)].map(b => b.toString(16).padStart(2, '0')).join('');
+  }
+
+  mailForm.addEventListener('submit', async e => {
+    e.preventDefault();
+    mailErreur.classList.add('hidden');
+    const adresse = mailInput.value.trim().toLowerCase();
+    const m = adresse.match(/^([^\s@]+)@([a-z0-9.-]+\.[a-z0-9-]{2,})$/);
+    if (!m) {
+      mailErreur.textContent = 'Ça ne ressemble pas à une adresse e-mail. Exemple : nom@exemple.fr';
+      mailErreur.classList.remove('hidden');
+      return;
+    }
+    const [, local, domaine] = m;
+    mailInput.value = adresse;
+    mailBouton.disabled = true;
+    mailBouton.textContent = '…';
+    mailResults.classList.remove('hidden');
+    mailVerdict.textContent = 'Analyse en cours…';
+    mailSignaux.innerHTML = '';
+    mailDetails.innerHTML = '';
+    mailGravatar.innerHTML = '';
+    mailAvatar.style.display = 'none';
+
+    try { navigator.clipboard && navigator.clipboard.writeText(adresse); } catch (_) {}
+
+    const gratuite = MESSAGERIES_GRATUITES.includes(domaine);
+    const racine = domaineRacine(domaine);
+
+    const [mxRes, aRes, txtRes, dmarcRes, jetRes, rdapRes] = await Promise.allSettled([
+      lireDns(domaine, 'MX'),
+      lireDns(domaine, 'A'),
+      lireDns(domaine, 'TXT'),
+      lireDns('_dmarc.' + domaine, 'TXT'),
+      listeJetables(),
+      gratuite ? Promise.reject() : lireRdap(racine)
+    ]);
+    const ok = r => r.status === 'fulfilled' ? r.value : null;
+    const mx = (ok(mxRes) || []).map(x => x.replace(/^\d+\s+/, '').replace(/\.$/, '').toLowerCase());
+    const a = ok(aRes) || [];
+    const spf = (ok(txtRes) || []).find(t => t.replace(/"/g, '').startsWith('v=spf1'));
+    const dmarc = (ok(dmarcRes) || []).find(t => t.replace(/"/g, '').toUpperCase().startsWith('V=DMARC1'));
+    const jetables = ok(jetRes) || new Set(JETABLES_SECOURS);
+    const rdap = ok(rdapRes);
+    const dnsEnPanne = mxRes.status === 'rejected' && aRes.status === 'rejected';
+
+    const signaux = [];
+    const fournisseur = fournisseurDe(mx);
+
+    // Adresse jetable
+    if (jetables.has(domaine) || jetables.has(racine) || (fournisseur && fournisseur.includes('jetable'))) {
+      signaux.push(['danger', `Adresse <strong>jetable</strong> (${esc(domaine)}) : créée en quelques secondes, sans aucune identité. Aucun service sérieux n'écrit depuis là.`]);
+    }
+
+    // Peut-elle recevoir des mails ?
+    if (!dnsEnPanne) {
+      if (!mx.length && !a.length) {
+        signaux.push(['danger', `Le domaine ${esc(domaine)} n'existe pas ou ne peut pas recevoir de mails : l'adresse est fausse ou inventée.`]);
+      } else if (!mx.length) {
+        signaux.push(['attention', `Le domaine ${esc(domaine)} n'a pas de serveur mail déclaré : adresse probablement inutilisable.`]);
+      }
+    }
+
+    // Messagerie gratuite + nom officiel
+    const localNet = local.replace(/[._+-]/g, '');
+    if (gratuite) {
+      const mot = MOTS_OFFICIELS.find(w => localNet.includes(w));
+      const generique = MOTS_GENERIQUES.find(w => localNet.includes(w));
+      if (mot) {
+        signaux.push(['danger', `L'adresse se présente comme officielle (« ${esc(mot)} ») mais utilise une messagerie gratuite (${esc(domaine)}). Une entreprise ou une administration n'écrit jamais depuis là.`]);
+      } else if (generique) {
+        signaux.push(['attention', `L'adresse imite un service (« ${esc(generique)} ») depuis une messagerie gratuite : possible chez un petit artisan, mais typique des arnaques au faux support.`]);
+      }
+    } else {
+      // Faux domaine de marque, chiffres, extension douteuse… (mêmes règles que l'outil Lien)
+      signauxUrl('https://' + domaine + '/')
+        .filter(([niv, msg]) => niv !== 'info' && !msg.includes('http)'))
+        .forEach(sg => signaux.push(sg));
+      // Âge du domaine
+      const cree = rdap && evenement(rdap, 'registration');
+      if (cree) {
+        const jours = (Date.now() - new Date(cree)) / 86400000;
+        if (jours < 90) signaux.unshift(['danger', `Le domaine ${esc(racine)} a été créé il y a seulement ${Math.max(0, Math.round(jours))} jours.`]);
+        else if (jours < 365) signaux.push(['attention', `Domaine récent (${anciennete(cree)}).`]);
+      }
+      if (!dmarc && (mx.length || a.length)) {
+        signaux.push(['info', `Le domaine n'a pas de protection DMARC : n'importe qui peut envoyer un mail qui <em>semble</em> venir de ${esc(domaine)}. L'adresse affichée seule ne prouve donc rien.`]);
+      }
+    }
+    if (gratuite) {
+      signaux.push(['info', `Messagerie grand public (${esc(domaine)}) : normal pour un particulier, anormal pour une entreprise ou une administration.`]);
+    }
+
+    // Verdict
+    const ordre = { danger: 0, attention: 1, info: 2 };
+    signaux.sort((x, y) => ordre[x[0]] - ordre[y[0]]);
+    const score = signaux.reduce((t, sg) => t + (sg[0] === 'danger' ? 3 : sg[0] === 'attention' ? 1 : 0), 0);
+    mailVerdict.innerHTML = score >= 3
+      ? '🚩 Très suspect : ne réponds pas et ne clique sur rien'
+      : score >= 1 ? '⚠️ Prudence : quelques signaux inhabituels' : '🔍 Aucun signal détecté';
+    mailSignaux.innerHTML = signaux.map(([niv, msg]) => `<div class="signal"><span class="badge ${NIVEAUX[niv].badge}">${NIVEAUX[niv].texte}</span><span>${msg}</span></div>`).join('');
+    if (score === 0) {
+      mailSignaux.innerHTML += '<p class="hint" style="margin:10px 0 0">L\'adresse a l\'air normale, mais ça ne dit rien sur la personne derrière. Juge surtout le <strong>contenu</strong> du message : urgence, demande d\'argent, de code ou de mot de passe = arnaque.</p>';
+    }
+    if (dnsEnPanne) mailSignaux.innerHTML += '<p class="erreur" style="margin-top:8px">Vérification DNS indisponible : résultat incomplet.</p>';
+
+    // Détails
+    let det = '';
+    det += ligne('Domaine', esc(domaine));
+    det += ligne('Fournisseur', fournisseur ? esc(fournisseur) : (mx.length ? 'Serveur propre ou inconnu' : null));
+    det += ligne('Serveurs mail (MX)', mx.length ? mx.slice(0, 4).map(esc).join('<br>') : '<span style="color:var(--muted)">aucun</span>');
+    if (!gratuite) {
+      det += ligne('SPF', spf ? '✔️ présent' : '✖️ absent');
+      det += ligne('DMARC', dmarc ? '✔️ présent' : '✖️ absent');
+      const cree = rdap && evenement(rdap, 'registration');
+      if (cree) det += ligne('Domaine créé le', `${formatJour(cree)}<br><small>${anciennete(cree)}</small>`);
+    }
+    mailDetails.innerHTML = det + (!gratuite ? '<p class="hint" style="margin-top:10px">SPF et DMARC sont des protections anti-usurpation. Les grandes entreprises et administrations les ont presque toujours.</p>' : '');
+    if (!gratuite && (mx.length || a.length)) {
+      mailDetails.innerHTML += `<button type="button" class="bouton-sec" id="mailVersDomaine">🌐 Analyser ${esc(racine)} en détail</button>`;
+      document.getElementById('mailVersDomaine').onclick = () => {
+        document.querySelector('nav button[data-tool="domaine"]').click();
+        domInput.value = racine;
+        domForm.requestSubmit();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      };
+    }
+
+    // Gravatar (photo publique liée à l'adresse)
+    try {
+      const h = await sha256(adresse);
+      mailAvatar.onload = () => {
+        mailAvatar.style.display = 'block';
+        mailGravatar.innerHTML = `<p class="hint" style="margin:0">Une photo publique est liée à cette adresse sur <a href="https://gravatar.com/${h}" target="_blank" rel="noopener">Gravatar</a> (utilisé par WordPress et de nombreux forums). Les arnaqueurs, eux, n'en ont presque jamais.</p>`;
+      };
+      mailAvatar.onerror = () => {
+        mailAvatar.style.display = 'none';
+        mailGravatar.innerHTML = '<p class="hint" style="margin:0">Aucune photo publique liée à cette adresse sur Gravatar.</p>';
+      };
+      mailAvatar.src = `https://gravatar.com/avatar/${h}?s=144&d=404`;
+    } catch (_) {
+      mailGravatar.innerHTML = '<p class="hint" style="margin:0">Vérification Gravatar indisponible.</p>';
+    }
+
+    mailBouton.disabled = false;
+    mailBouton.textContent = 'Vérifier';
+  });
+
+  /* ========== Outil Où est-ce ? ========== */
+  const geoDrop = document.getElementById('geoDrop');
+  const geoFichier = document.getElementById('geoFichier');
+  const geoGps = document.getElementById('geoGps');
+  const geoAtelier = document.getElementById('geoAtelier');
+  const geoCanvas = document.getElementById('geoCanvas');
+  const geoCtx = geoCanvas.getContext('2d');
+  const geoTelecharger = document.getElementById('geoTelecharger');
+  const geoMiroir = document.getElementById('geoMiroir');
+  const geoEffacer = document.getElementById('geoEffacer');
+  const geoIndices = document.getElementById('geoIndices');
+  const geoForm = document.getElementById('geoForm');
+  const geoLieu = document.getElementById('geoLieu');
+  const geoChercher = document.getElementById('geoChercher');
+  const geoErreur = document.getElementById('geoErreur');
+  const geoCandidats = document.getElementById('geoCandidats');
+  const geoCartes = document.getElementById('geoCartes');
+  const geoPoint = document.getElementById('geoPoint');
+  const geoLiens = document.getElementById('geoLiens');
+  const geoDate = document.getElementById('geoDate');
+  const geoHeure = document.getElementById('geoHeure');
+  const geoSoleil = document.getElementById('geoSoleil');
+
+  const INDICES = [
+    ['Langue et écriture', 'Panneaux, enseignes, affiches : quelle langue, quel alphabet ? Les accents aident (ñ, ç, ø, ł…).'],
+    ['Plaques d’immatriculation', 'Couleur, bande bleue européenne, format : chaque pays a le sien.'],
+    ['Sens de circulation', 'Voitures garées et panneaux du côté gauche = Royaume-Uni, Irlande, Japon, Australie…'],
+    ['Panneaux et marquages', 'Forme des panneaux, couleur des lignes au sol (jaunes, blanches), bornes kilométriques.'],
+    ['Architecture', 'Toits (tuiles, ardoise, plats), matériaux, couleurs des volets, style des fenêtres.'],
+    ['Végétation et relief', 'Palmiers, sapins, vignes, terre rouge, montagnes, mer : climat et région.'],
+    ['Poteaux et câbles', 'Poteaux électriques en bois ou béton, forme des lampadaires : très typiques d’un pays.'],
+    ['Soleil et ombres', 'Direction et longueur des ombres : hémisphère, orientation, heure approximative.'],
+    ['Commerces et marques', 'Chaînes de magasins, stations-service, opérateurs : souvent limités à quelques pays.'],
+    ['Numéros et adresses', 'Numéros de téléphone (indicatif), codes postaux, noms de rues visibles.']
+  ];
+  geoIndices.innerHTML = INDICES.map(([titre, aide], i) =>
+    `<label class="indice"><input type="checkbox" id="indice${i}"><span><strong>${titre}</strong><small>${aide}</small></span></label>`).join('');
+
+  let geoImg = null, geoMiroirActif = false, geoCadre = null, geoDepart = null;
+
+  function dessinerGeo() {
+    if (!geoImg) return;
+    geoCtx.save();
+    geoCtx.clearRect(0, 0, geoCanvas.width, geoCanvas.height);
+    if (geoMiroirActif) { geoCtx.translate(geoCanvas.width, 0); geoCtx.scale(-1, 1); }
+    geoCtx.drawImage(geoImg, 0, 0, geoCanvas.width, geoCanvas.height);
+    geoCtx.restore();
+    if (geoCadre && geoCadre.w > 4 && geoCadre.h > 4) {
+      geoCtx.fillStyle = 'rgba(0,0,0,0.55)';
+      geoCtx.fillRect(0, 0, geoCanvas.width, geoCadre.y);
+      geoCtx.fillRect(0, geoCadre.y + geoCadre.h, geoCanvas.width, geoCanvas.height - geoCadre.y - geoCadre.h);
+      geoCtx.fillRect(0, geoCadre.y, geoCadre.x, geoCadre.h);
+      geoCtx.fillRect(geoCadre.x + geoCadre.w, geoCadre.y, geoCanvas.width - geoCadre.x - geoCadre.w, geoCadre.h);
+      geoCtx.strokeStyle = '#63a4ff';
+      geoCtx.lineWidth = Math.max(2, geoCanvas.width / 400);
+      geoCtx.strokeRect(geoCadre.x, geoCadre.y, geoCadre.w, geoCadre.h);
+    }
+  }
+
+  function pointCanvas(e) {
+    const r = geoCanvas.getBoundingClientRect();
+    return {
+      x: Math.min(Math.max(0, (e.clientX - r.left) * geoCanvas.width / r.width), geoCanvas.width),
+      y: Math.min(Math.max(0, (e.clientY - r.top) * geoCanvas.height / r.height), geoCanvas.height)
+    };
+  }
+  geoCanvas.addEventListener('pointerdown', e => {
+    if (!geoImg) return;
+    geoCanvas.setPointerCapture(e.pointerId);
+    geoDepart = pointCanvas(e);
+    geoCadre = { x: geoDepart.x, y: geoDepart.y, w: 0, h: 0 };
+  });
+  geoCanvas.addEventListener('pointermove', e => {
+    if (!geoDepart) return;
+    const p = pointCanvas(e);
+    geoCadre = { x: Math.min(p.x, geoDepart.x), y: Math.min(p.y, geoDepart.y), w: Math.abs(p.x - geoDepart.x), h: Math.abs(p.y - geoDepart.y) };
+    dessinerGeo();
+  });
+  geoCanvas.addEventListener('pointerup', () => {
+    geoDepart = null;
+    geoTelecharger.disabled = !(geoCadre && geoCadre.w > 4 && geoCadre.h > 4);
+  });
+  geoEffacer.addEventListener('click', () => { geoCadre = null; geoTelecharger.disabled = true; dessinerGeo(); });
+  geoMiroir.addEventListener('click', () => { geoMiroirActif = !geoMiroirActif; geoCadre = null; geoTelecharger.disabled = true; dessinerGeo(); });
+
+  geoTelecharger.addEventListener('click', () => {
+    if (!geoImg || !geoCadre) return;
+    const echelle = geoImg.naturalWidth / geoCanvas.width;
+    const sortie = document.createElement('canvas');
+    sortie.width = Math.round(geoCadre.w * echelle);
+    sortie.height = Math.round(geoCadre.h * echelle);
+    const c = sortie.getContext('2d');
+    if (geoMiroirActif) { c.translate(sortie.width, 0); c.scale(-1, 1); }
+    const sx = geoMiroirActif ? geoImg.naturalWidth - (geoCadre.x + geoCadre.w) * echelle : geoCadre.x * echelle;
+    c.drawImage(geoImg, sx, geoCadre.y * echelle, geoCadre.w * echelle, geoCadre.h * echelle, 0, 0, sortie.width, sortie.height);
+    sortie.toBlob(b => {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(b);
+      a.download = 'detail-gojo.jpg';
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+    }, 'image/jpeg', 0.92);
+  });
+
+  function ouvrirPhotoGeo(fichier) {
+    const img = new Image();
+    img.onload = () => {
+      geoImg = img;
+      const max = 1600;
+      const ratio = Math.min(1, max / img.naturalWidth);
+      geoCanvas.width = Math.round(img.naturalWidth * ratio);
+      geoCanvas.height = Math.round(img.naturalHeight * ratio);
+      geoMiroirActif = false; geoCadre = null; geoTelecharger.disabled = true;
+      dessinerGeo();
+      geoAtelier.classList.remove('hidden');
+    };
+    img.src = URL.createObjectURL(fichier);
+
+    geoGps.innerHTML = '';
+    geoCartes.classList.add('hidden');
+    geoCandidats.innerHTML = '';
+    geoLat = null; geoLon = null;
+    geoDate.value = ''; geoHeure.value = '';
+    exifr.parse(fichier, true).then(d => {
+      if (!d) return;
+      const dt = d.DateTimeOriginal instanceof Date ? d.DateTimeOriginal : null;
+      if (dt) {
+        geoDate.value = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+        geoHeure.value = `${String(dt.getHours()).padStart(2, '0')}:${String(dt.getMinutes()).padStart(2, '0')}`;
+      }
+      if (typeof d.latitude === 'number' && typeof d.longitude === 'number') {
+        geoGps.innerHTML = '<span class="badge warn">📍 Cette photo contient déjà sa position GPS</span>' +
+          '<p class="hint" style="margin-top:8px">Pas besoin d’enquêter : elle est affichée ci-dessous. Vérifie quand même qu’elle colle avec ce que montre la photo (un GPS peut être modifié).</p>';
+        placerPoint(d.latitude, d.longitude, 'Position GPS de la photo');
+      } else if (dt) {
+        geoGps.innerHTML = '<p class="hint" style="margin:0">Pas de GPS, mais la date de prise de vue a été récupérée pour la vérification du soleil.</p>';
+      }
+    }).catch(() => {});
+  }
+
+  geoDrop.addEventListener('click', () => geoFichier.click());
+  geoDrop.addEventListener('dragover', e => { e.preventDefault(); geoDrop.style.borderColor = 'var(--accent)'; });
+  geoDrop.addEventListener('dragleave', () => { geoDrop.style.borderColor = ''; });
+  geoDrop.addEventListener('drop', e => { e.preventDefault(); geoDrop.style.borderColor = ''; if (e.dataTransfer.files[0]) ouvrirPhotoGeo(e.dataTransfer.files[0]); });
+  geoFichier.addEventListener('change', () => { if (geoFichier.files[0]) ouvrirPhotoGeo(geoFichier.files[0]); });
+
+  let geoLat = null, geoLon = null;
+
+  function majSoleil() {
+    if (geoLat === null) return;
+    const d = geoDate.value ? geoDate.value.replace(/-/g, '.') : new Date().toISOString().slice(0, 10).replace(/-/g, '.');
+    const h = geoHeure.value || '12:00';
+    geoSoleil.href = `https://www.suncalc.org/#/${geoLat},${geoLon},17/${d}/${h}/1/3`;
+  }
+  geoDate.addEventListener('change', majSoleil);
+  geoHeure.addEventListener('change', majSoleil);
+
+  function placerPoint(lat, lon, nom) {
+    geoLat = +lat.toFixed(6); geoLon = +lon.toFixed(6);
+    const L = geoLat, G = geoLon;
+    geoPoint.innerHTML = ligne('Lieu', esc(nom)) + ligne('Coordonnées', `${L}, ${G}`);
+    const liens = [
+      ['Satellite', 'Google Maps', `https://www.google.com/maps/@?api=1&map_action=map&center=${L},${G}&zoom=18&basemap=satellite`],
+      ['Vue de rue', 'Street View', `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${L},${G}`],
+      ['Photos de rue libres', 'Mapillary', `https://www.mapillary.com/app/?lat=${L}&lng=${G}&z=17`],
+      ['Photos aériennes IGN', 'Géoportail', `https://www.geoportail.gouv.fr/carte?c=${G},${L}&z=17&l0=ORTHOIMAGERY.ORTHOPHOTOS::GEOPORTAIL:OGC:WMTS(1)&permalink=yes`],
+      ['Relief en 3D', 'Google Earth', `https://earth.google.com/web/@${L},${G},300a,800d,35y,0h,60t,0r`],
+      ['Carte détaillée', 'OpenStreetMap', `https://www.openstreetmap.org/?mlat=${L}&mlon=${G}#map=17/${L}/${G}`]
+    ];
+    geoLiens.innerHTML = liens.map(([desc, nomL, url]) => `<a href="${url}" target="_blank" rel="noopener">${nomL}<small>${desc}</small></a>`).join('');
+    geoCartes.classList.remove('hidden');
+    majSoleil();
+  }
+
+  geoForm.addEventListener('submit', async e => {
+    e.preventDefault();
+    geoErreur.classList.add('hidden');
+    geoCandidats.innerHTML = '';
+    const q = geoLieu.value.trim();
+    if (!q) return;
+
+    const c = q.replace(/[°]/g, '').match(/^(-?\d{1,2}(?:[.,]\d+)?)\s*[,;\s]\s*(-?\d{1,3}(?:[.,]\d+)?)$/);
+    if (c) {
+      const lat = parseFloat(c[1].replace(',', '.')), lon = parseFloat(c[2].replace(',', '.'));
+      if (Math.abs(lat) <= 90 && Math.abs(lon) <= 180) { placerPoint(lat, lon, 'Coordonnées saisies'); return; }
+    }
+
+    geoChercher.disabled = true; geoChercher.textContent = '…';
+    try {
+      const r = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=5&accept-language=fr&q=${encodeURIComponent(q)}`);
+      const res = await r.json();
+      if (!res.length) {
+        geoErreur.textContent = 'Lieu introuvable. Essaie avec la ville ou le pays en plus.';
+        geoErreur.classList.remove('hidden');
+      } else if (res.length === 1) {
+        placerPoint(+res[0].lat, +res[0].lon, res[0].display_name);
+      } else {
+        geoCandidats.innerHTML = '<p class="hint" style="margin:10px 0 0">Plusieurs lieux correspondent, choisis le bon :</p>' +
+          res.map((x, i) => `<button type="button" class="bouton-sec candidat" data-i="${i}">${esc(x.display_name)}</button>`).join('');
+        geoCandidats.querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+          const x = res[+b.dataset.i];
+          placerPoint(+x.lat, +x.lon, x.display_name);
+          geoCandidats.innerHTML = '';
+        }));
+      }
+    } catch (_) {
+      geoErreur.textContent = 'Recherche de lieu indisponible. Tu peux entrer des coordonnées directement.';
+      geoErreur.classList.remove('hidden');
+    }
+    geoChercher.disabled = false; geoChercher.textContent = 'Situer';
+  });
+
+  /* ========== PWA ========== */
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    });
+  }
+</script>
+</body>
+</html>
