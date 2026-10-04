@@ -356,6 +356,7 @@
         <li><strong>Un lien « propre » n'est pas une garantie.</strong> Certains sites d'arnaque montrent une page anodine aux robots et la vraie arnaque aux téléphones.</li>
         <li><strong>L'expéditeur peut voir que le lien a été ouvert</strong> (depuis un serveur, pas depuis chez toi). Ce n'est pas grave, mais à savoir.</li>
         <li><strong>Les vrais services</strong> (La Poste, Ameli, impôts, banques) ne demandent jamais de payer ou de saisir ta carte via un lien SMS.</li>
+        <li><strong>Regarde aussi le message autour du lien</strong> : numéro de portable inconnu, urgence, photo « de preuve », ton nom et ton code postal… L'outil n'analyse que le lien.</li>
         <li><strong>En cas de doute</strong>, transfère le SMS au <strong>33700</strong> (signalement gratuit des SMS indésirables).</li>
       </ul>
     </div>
@@ -930,7 +931,8 @@
     'shorturl.at', 'tiny.cc', 's.id', 'rb.gy', 't.ly', 'buff.ly', 'lnkd.in', 'shorturl.com', 'v.gd', 'qrco.de', 'urlz.fr', 'bit.do'];
 
   const EXTENSIONS_RISQUEES = ['xyz', 'top', 'icu', 'click', 'live', 'shop', 'online', 'site', 'buzz', 'cfd', 'sbs',
-    'rest', 'cyou', 'monster', 'quest', 'cam', 'fun', 'lol', 'mom', 'bond', 'support', 'help', 'info', 'vip'];
+    'rest', 'cyou', 'monster', 'quest', 'cam', 'fun', 'lol', 'mom', 'bond', 'support', 'help', 'info', 'vip',
+    'pro', 'cc', 'tk', 'ml', 'ga', 'cf', 'gq', 'work', 'link', 'biz', 'life', 'win', 'loan', 'mobi', 'today', 'world'];
 
   // Marques souvent imitées → leurs vrais domaines
   const MARQUES = {
@@ -964,7 +966,8 @@
   };
 
   const MOTS_APPATS = ['colis', 'livraison', 'suivi', 'paiement', 'payment', 'frais', 'amende', 'remboursement',
-    'verify', 'verification', 'login', 'secure', 'securite', 'compte', 'update', 'confirm', 'carte', 'vitale'];
+    'verify', 'verification', 'login', 'secure', 'securite', 'compte', 'update', 'confirm', 'carte', 'vitale',
+    'urge', 'urgent', 'relais', 'douane', 'track'];
 
   const SUFFIXES_DOUBLES = ['gouv.fr', 'asso.fr', 'co.uk', 'org.uk', 'com.au', 'co.jp', 'com.br', 'co.nz', 'co.za', 'com.tr'];
 
@@ -1007,6 +1010,10 @@
     }
     if (u.protocol === 'http:') {
       s.push(['attention', 'Connexion non chiffrée (http) : à éviter absolument pour saisir des informations.']);
+    }
+    const etiquette = racine.split('.')[0];
+    if (/\d{4,}/.test(etiquette) || (/\d/.test(etiquette) && /[a-z]/.test(etiquette) && etiquette.replace(/\D/g, '').length >= 3)) {
+      s.push(['attention', `Nom de domaine avec une suite de chiffres (${esc(etiquette)}) : typique des domaines jetables créés en série.`]);
     }
     if (h.split('.').length > 4) {
       s.push(['attention', `Beaucoup de sous-domaines (${esc(h)}) : technique pour faire croire à un site officiel.`]);
@@ -1111,8 +1118,19 @@
           htmlFin += ligne('Domaine créé le', `${formatJour(cree)}<br><small>${anciennete(cree)}</small>`);
           const jours = (Date.now() - new Date(cree)) / 86400000;
           if (jours < 90) signaux.unshift(['danger', `Le domaine ${esc(racine)} a été créé il y a seulement ${Math.max(0, Math.round(jours))} jours.`]);
+          else if (jours < 365) signaux.push(['attention', `Domaine récent (${anciennete(cree)}) : les sites d'arnaque vivent rarement plus de quelques mois.`]);
         }
       } catch (_) {}
+      if (hFinal !== racine && !hFinal.startsWith('www.')) {
+        try {
+          const essai = 'gojo-' + Math.random().toString(36).slice(2, 10) + '.' + racine;
+          const ips = await lireDns(essai, 'A');
+          if (ips.length) {
+            const prefixe = hFinal.slice(0, -racine.length - 1);
+            signaux.push(['attention', `Ce site répond à <em>n'importe quel</em> sous-domaine : le début du lien (« ${esc(prefixe)} ») a probablement été fabriqué pour toi, avec ton nom ou un identifiant.`]);
+          }
+        } catch (_) {}
+      }
       const q = encodeURIComponent(finale);
       htmlFin += ligne('Réputation', `<a href="https://www.virustotal.com/gui/search/${q}" target="_blank" rel="noopener">VirusTotal</a> · <a href="https://urlscan.io/search/#${encodeURIComponent(racine)}" target="_blank" rel="noopener">urlscan.io</a>`);
       lienVersDomaine.classList.remove('hidden');
@@ -1122,11 +1140,10 @@
     // 5) Verdict
     const ordre = { danger: 0, attention: 1, info: 2 };
     signaux.sort((a, b) => ordre[a[0]] - ordre[b[0]]);
-    const aDanger = signaux.some(s => s[0] === 'danger');
-    const aAttention = signaux.some(s => s[0] === 'attention');
-    lienVerdict.innerHTML = aDanger
+    const score = signaux.reduce((t, s) => t + (s[0] === 'danger' ? 3 : s[0] === 'attention' ? 1 : 0), 0);
+    lienVerdict.innerHTML = score >= 3
       ? '🚩 Très suspect : ne saisis aucune information'
-      : aAttention
+      : score >= 1
         ? '⚠️ Prudence : quelques signaux inhabituels'
         : '✅ Aucun signal évident';
     lienSignaux.innerHTML = signaux.length
