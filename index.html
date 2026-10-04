@@ -189,6 +189,7 @@
   .etape { padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 0.88rem; }
   .etape:last-child { border-bottom: none; }
   .etape code { display: block; word-break: break-all; color: var(--text); margin-top: 4px; font-size: 0.85rem; }
+  #mailAvatar { width: 72px; height: 72px; border-radius: 50%; display: none; margin-bottom: 8px; }
   .bouton-sec {
     margin-top: 10px;
     padding: 10px 14px;
@@ -222,6 +223,7 @@
   <button data-tool="domaine">🌐 Domaine</button>
   <button data-tool="lien">🔗 Lien</button>
   <button data-tool="ip">🛰️ IP</button>
+  <button data-tool="email">✉️ E-mail</button>
   <button data-tool="pseudo">👤 Pseudo</button>
   <button data-tool="inverse">🖼️ Image inversée</button>
   <button data-tool="archives">🕰️ Archives</button>
@@ -398,6 +400,53 @@
     </div>
   </section>
 
+  <section id="tool-email" class="hidden">
+    <div class="card">
+      <h2>Vérifier une adresse e-mail</h2>
+      <p class="hint">Un mail t'inquiète ? Vérifie si l'expéditeur est crédible : adresse jetable, faux nom de marque, domaine tout neuf… Ou vérifie une de tes adresses.</p>
+      <form id="mailForm" class="ligne-form">
+        <input type="email" id="mailInput" placeholder="nom@exemple.fr" autocomplete="off" autocapitalize="off" spellcheck="false">
+        <button type="submit" id="mailBouton">Vérifier</button>
+      </form>
+      <p id="mailErreur" class="erreur hidden"></p>
+    </div>
+
+    <div id="mailResults" class="hidden">
+      <div class="card">
+        <h2>Verdict</h2>
+        <div class="verdict" id="mailVerdict"></div>
+        <div id="mailSignaux"></div>
+      </div>
+      <div class="card">
+        <h2>Détails techniques</h2>
+        <div class="summary" id="mailDetails"></div>
+      </div>
+      <div class="card">
+        <h2>Cette adresse a-t-elle fuité ?</h2>
+        <p class="hint">Ces services listent les fuites de données (sites piratés) où une adresse apparaît. Utile pour <strong>tes</strong> adresses : si elle a fuité, change le mot de passe associé.</p>
+        <div class="moteurs">
+          <a href="https://haveibeenpwned.com/" target="_blank" rel="noopener" id="mailHibp">Have I Been Pwned<small>référence mondiale</small></a>
+          <a href="https://monitor.mozilla.org/" target="_blank" rel="noopener">Mozilla Monitor<small>même base, en français</small></a>
+        </div>
+        <p class="hint" style="margin:10px 0 0">L'adresse est copiée automatiquement : il suffit de la coller sur le site.</p>
+      </div>
+      <div class="card" id="mailGravatarCarte">
+        <h2>Photo de profil publique</h2>
+        <img id="mailAvatar" alt="Photo Gravatar">
+        <div id="mailGravatar"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Bon à savoir</h2>
+      <ul class="conseils">
+        <li><strong>Le nom affiché ne prouve rien</strong> : « Ameli » peut cacher n'importe quelle adresse. Vérifie toujours l'adresse réelle derrière le nom (appui long sur l'expéditeur).</li>
+        <li><strong>Une administration ou une banque n'écrit jamais</strong> depuis une adresse Gmail, Orange, Outlook…</li>
+        <li><strong>Même une vraie adresse peut être imitée</strong> si son domaine n'est pas protégé (voir « DMARC » dans les détails).</li>
+      </ul>
+    </div>
+  </section>
+
   <section id="tool-pseudo" class="hidden">
     <div class="card">
       <h2>Recherche de pseudo</h2>
@@ -469,7 +518,7 @@
   </section>
 </main>
 
-<footer>À utiliser de façon responsable — respecte la vie privée des personnes.<br><small>version 9 · Adresse IP</small></footer>
+<footer>À utiliser de façon responsable — respecte la vie privée des personnes.<br><small>version 10 · E-mail</small></footer>
 
 <script>
   const dropzone = document.getElementById('dropzone');
@@ -1472,6 +1521,217 @@
     ipInput.value = lien.dataset.ip;
     ipForm.requestSubmit();
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
+  /* ========== Outil E-mail ========== */
+  const mailForm = document.getElementById('mailForm');
+  const mailInput = document.getElementById('mailInput');
+  const mailBouton = document.getElementById('mailBouton');
+  const mailErreur = document.getElementById('mailErreur');
+  const mailResults = document.getElementById('mailResults');
+  const mailVerdict = document.getElementById('mailVerdict');
+  const mailSignaux = document.getElementById('mailSignaux');
+  const mailDetails = document.getElementById('mailDetails');
+  const mailAvatar = document.getElementById('mailAvatar');
+  const mailGravatar = document.getElementById('mailGravatar');
+
+  const MESSAGERIES_GRATUITES = ['gmail.com', 'googlemail.com', 'outlook.com', 'outlook.fr', 'hotmail.com', 'hotmail.fr',
+    'live.com', 'live.fr', 'msn.com', 'yahoo.com', 'yahoo.fr', 'ymail.com', 'icloud.com', 'me.com', 'mac.com',
+    'aol.com', 'aol.fr', 'orange.fr', 'wanadoo.fr', 'free.fr', 'sfr.fr', 'neuf.fr', 'laposte.net', 'gmx.com', 'gmx.fr',
+    'gmx.de', 'proton.me', 'protonmail.com', 'pm.me', 'tutanota.com', 'tuta.io', 'mail.com', 'bbox.fr',
+    'numericable.fr', 'yandex.com', 'yandex.ru', 'mail.ru', 'zoho.com'];
+
+  // Liste de secours si la grande liste en ligne ne se charge pas
+  const JETABLES_SECOURS = ['yopmail.com', 'yopmail.fr', 'yopmail.net', 'mailinator.com', 'guerrillamail.com',
+    'guerrillamail.info', 'sharklasers.com', 'grr.la', '10minutemail.com', '10minutemail.net', 'temp-mail.org',
+    'tempmail.com', 'trashmail.com', 'trashmail.fr', 'jetable.org', 'mail.tm', 'getnada.com', 'dispostable.com',
+    'maildrop.cc', 'throwawaymail.com', 'mohmal.com', 'emailondeck.com', 'mytemp.email', 'tempr.email',
+    'discard.email', 'mailnesia.com', 'spamgourmet.com', 'mintemail.com', 'fakeinbox.com', 'tempail.com',
+    'burnermail.io', 'mailcatch.com', 'inboxkitten.com', 'emailfake.com', 'crazymailing.com', 'tmpmail.org'];
+
+  let jetablesComplets = null;
+  async function listeJetables() {
+    if (jetablesComplets) return jetablesComplets;
+    try {
+      const r = await fetch('https://cdn.jsdelivr.net/gh/disposable-email-domains/disposable-email-domains@main/disposable_email_blocklist.conf');
+      if (!r.ok) throw 0;
+      const t = await r.text();
+      jetablesComplets = new Set(t.split('\n').map(x => x.trim().toLowerCase()).filter(Boolean));
+      JETABLES_SECOURS.forEach(d => jetablesComplets.add(d));
+      return jetablesComplets;
+    } catch (_) {
+      return new Set(JETABLES_SECOURS);
+    }
+  }
+
+  const FOURNISSEURS_MX = [
+    ['google.com', 'Google (Gmail / Workspace)'], ['googlemail.com', 'Google (Gmail / Workspace)'],
+    ['outlook.com', 'Microsoft (Outlook / 365)'], ['hotmail.com', 'Microsoft (Outlook)'],
+    ['protonmail.ch', 'Proton Mail'], ['proton.me', 'Proton Mail'], ['yahoodns.net', 'Yahoo'],
+    ['icloud.com', 'Apple iCloud'], ['me.com', 'Apple iCloud'], ['ovh.net', 'OVH'], ['orange.fr', 'Orange'],
+    ['free.fr', 'Free'], ['sfr.fr', 'SFR'], ['laposte.net', 'La Poste'], ['gandi.net', 'Gandi'],
+    ['ionos', 'IONOS'], ['1and1', 'IONOS'], ['zoho', 'Zoho'], ['mimecast', 'Mimecast (filtrage pro)'],
+    ['pphosted.com', 'Proofpoint (filtrage pro)'], ['messagelabs.com', 'Broadcom (filtrage pro)'],
+    ['mailgun.org', 'Mailgun (service d\'envoi)'], ['sendgrid.net', 'SendGrid (service d\'envoi)'],
+    ['yopmail', 'YOPmail (jetable)'], ['mailinator', 'Mailinator (jetable)'], ['guerrillamail', 'Guerrilla Mail (jetable)']
+  ];
+  function fournisseurDe(mx) {
+    for (const [cle, nom] of FOURNISSEURS_MX) if (mx.some(m => m.includes(cle))) return nom;
+    return null;
+  }
+
+  const MOTS_OFFICIELS = [...Object.keys(MARQUES), 'banque', 'gendarmerie', 'police', 'douane', 'tresorpublic',
+    'gouv', 'administration', 'impot'];
+  const MOTS_GENERIQUES = ['servicesclient', 'serviceclient', 'support', 'securite', 'security', 'noreply', 'helpdesk'];
+
+  async function sha256(texte) {
+    const tampon = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(texte));
+    return [...new Uint8Array(tampon)].map(b => b.toString(16).padStart(2, '0')).join('');
+  }
+
+  mailForm.addEventListener('submit', async e => {
+    e.preventDefault();
+    mailErreur.classList.add('hidden');
+    const adresse = mailInput.value.trim().toLowerCase();
+    const m = adresse.match(/^([^\s@]+)@([a-z0-9.-]+\.[a-z0-9-]{2,})$/);
+    if (!m) {
+      mailErreur.textContent = 'Ça ne ressemble pas à une adresse e-mail. Exemple : nom@exemple.fr';
+      mailErreur.classList.remove('hidden');
+      return;
+    }
+    const [, local, domaine] = m;
+    mailInput.value = adresse;
+    mailBouton.disabled = true;
+    mailBouton.textContent = '…';
+    mailResults.classList.remove('hidden');
+    mailVerdict.textContent = 'Analyse en cours…';
+    mailSignaux.innerHTML = '';
+    mailDetails.innerHTML = '';
+    mailGravatar.innerHTML = '';
+    mailAvatar.style.display = 'none';
+
+    try { navigator.clipboard && navigator.clipboard.writeText(adresse); } catch (_) {}
+
+    const gratuite = MESSAGERIES_GRATUITES.includes(domaine);
+    const racine = domaineRacine(domaine);
+
+    const [mxRes, aRes, txtRes, dmarcRes, jetRes, rdapRes] = await Promise.allSettled([
+      lireDns(domaine, 'MX'),
+      lireDns(domaine, 'A'),
+      lireDns(domaine, 'TXT'),
+      lireDns('_dmarc.' + domaine, 'TXT'),
+      listeJetables(),
+      gratuite ? Promise.reject() : lireRdap(racine)
+    ]);
+    const ok = r => r.status === 'fulfilled' ? r.value : null;
+    const mx = (ok(mxRes) || []).map(x => x.replace(/^\d+\s+/, '').replace(/\.$/, '').toLowerCase());
+    const a = ok(aRes) || [];
+    const spf = (ok(txtRes) || []).find(t => t.replace(/"/g, '').startsWith('v=spf1'));
+    const dmarc = (ok(dmarcRes) || []).find(t => t.replace(/"/g, '').toUpperCase().startsWith('V=DMARC1'));
+    const jetables = ok(jetRes) || new Set(JETABLES_SECOURS);
+    const rdap = ok(rdapRes);
+    const dnsEnPanne = mxRes.status === 'rejected' && aRes.status === 'rejected';
+
+    const signaux = [];
+    const fournisseur = fournisseurDe(mx);
+
+    // Adresse jetable
+    if (jetables.has(domaine) || jetables.has(racine) || (fournisseur && fournisseur.includes('jetable'))) {
+      signaux.push(['danger', `Adresse <strong>jetable</strong> (${esc(domaine)}) : créée en quelques secondes, sans aucune identité. Aucun service sérieux n'écrit depuis là.`]);
+    }
+
+    // Peut-elle recevoir des mails ?
+    if (!dnsEnPanne) {
+      if (!mx.length && !a.length) {
+        signaux.push(['danger', `Le domaine ${esc(domaine)} n'existe pas ou ne peut pas recevoir de mails : l'adresse est fausse ou inventée.`]);
+      } else if (!mx.length) {
+        signaux.push(['attention', `Le domaine ${esc(domaine)} n'a pas de serveur mail déclaré : adresse probablement inutilisable.`]);
+      }
+    }
+
+    // Messagerie gratuite + nom officiel
+    const localNet = local.replace(/[._+-]/g, '');
+    if (gratuite) {
+      const mot = MOTS_OFFICIELS.find(w => localNet.includes(w));
+      const generique = MOTS_GENERIQUES.find(w => localNet.includes(w));
+      if (mot) {
+        signaux.push(['danger', `L'adresse se présente comme officielle (« ${esc(mot)} ») mais utilise une messagerie gratuite (${esc(domaine)}). Une entreprise ou une administration n'écrit jamais depuis là.`]);
+      } else if (generique) {
+        signaux.push(['attention', `L'adresse imite un service (« ${esc(generique)} ») depuis une messagerie gratuite : possible chez un petit artisan, mais typique des arnaques au faux support.`]);
+      }
+    } else {
+      // Faux domaine de marque, chiffres, extension douteuse… (mêmes règles que l'outil Lien)
+      signauxUrl('https://' + domaine + '/')
+        .filter(([niv, msg]) => niv !== 'info' && !msg.includes('http)'))
+        .forEach(sg => signaux.push(sg));
+      // Âge du domaine
+      const cree = rdap && evenement(rdap, 'registration');
+      if (cree) {
+        const jours = (Date.now() - new Date(cree)) / 86400000;
+        if (jours < 90) signaux.unshift(['danger', `Le domaine ${esc(racine)} a été créé il y a seulement ${Math.max(0, Math.round(jours))} jours.`]);
+        else if (jours < 365) signaux.push(['attention', `Domaine récent (${anciennete(cree)}).`]);
+      }
+      if (!dmarc && (mx.length || a.length)) {
+        signaux.push(['info', `Le domaine n'a pas de protection DMARC : n'importe qui peut envoyer un mail qui <em>semble</em> venir de ${esc(domaine)}. L'adresse affichée seule ne prouve donc rien.`]);
+      }
+    }
+    if (gratuite) {
+      signaux.push(['info', `Messagerie grand public (${esc(domaine)}) : normal pour un particulier, anormal pour une entreprise ou une administration.`]);
+    }
+
+    // Verdict
+    const ordre = { danger: 0, attention: 1, info: 2 };
+    signaux.sort((x, y) => ordre[x[0]] - ordre[y[0]]);
+    const score = signaux.reduce((t, sg) => t + (sg[0] === 'danger' ? 3 : sg[0] === 'attention' ? 1 : 0), 0);
+    mailVerdict.innerHTML = score >= 3
+      ? '🚩 Très suspect : ne réponds pas et ne clique sur rien'
+      : score >= 1 ? '⚠️ Prudence : quelques signaux inhabituels' : '🔍 Aucun signal détecté';
+    mailSignaux.innerHTML = signaux.map(([niv, msg]) => `<div class="signal"><span class="badge ${NIVEAUX[niv].badge}">${NIVEAUX[niv].texte}</span><span>${msg}</span></div>`).join('');
+    if (score === 0) {
+      mailSignaux.innerHTML += '<p class="hint" style="margin:10px 0 0">L\'adresse a l\'air normale, mais ça ne dit rien sur la personne derrière. Juge surtout le <strong>contenu</strong> du message : urgence, demande d\'argent, de code ou de mot de passe = arnaque.</p>';
+    }
+    if (dnsEnPanne) mailSignaux.innerHTML += '<p class="erreur" style="margin-top:8px">Vérification DNS indisponible : résultat incomplet.</p>';
+
+    // Détails
+    let det = '';
+    det += ligne('Domaine', esc(domaine));
+    det += ligne('Fournisseur', fournisseur ? esc(fournisseur) : (mx.length ? 'Serveur propre ou inconnu' : null));
+    det += ligne('Serveurs mail (MX)', mx.length ? mx.slice(0, 4).map(esc).join('<br>') : '<span style="color:var(--muted)">aucun</span>');
+    if (!gratuite) {
+      det += ligne('SPF', spf ? '✔️ présent' : '✖️ absent');
+      det += ligne('DMARC', dmarc ? '✔️ présent' : '✖️ absent');
+      const cree = rdap && evenement(rdap, 'registration');
+      if (cree) det += ligne('Domaine créé le', `${formatJour(cree)}<br><small>${anciennete(cree)}</small>`);
+    }
+    mailDetails.innerHTML = det + (!gratuite ? '<p class="hint" style="margin-top:10px">SPF et DMARC sont des protections anti-usurpation. Les grandes entreprises et administrations les ont presque toujours.</p>' : '');
+    if (!gratuite && (mx.length || a.length)) {
+      mailDetails.innerHTML += `<button type="button" class="bouton-sec" id="mailVersDomaine">🌐 Analyser ${esc(racine)} en détail</button>`;
+      document.getElementById('mailVersDomaine').onclick = () => {
+        document.querySelector('nav button[data-tool="domaine"]').click();
+        domInput.value = racine;
+        domForm.requestSubmit();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      };
+    }
+
+    // Gravatar (photo publique liée à l'adresse)
+    try {
+      const h = await sha256(adresse);
+      mailAvatar.onload = () => {
+        mailAvatar.style.display = 'block';
+        mailGravatar.innerHTML = `<p class="hint" style="margin:0">Une photo publique est liée à cette adresse sur <a href="https://gravatar.com/${h}" target="_blank" rel="noopener">Gravatar</a> (utilisé par WordPress et de nombreux forums). Les arnaqueurs, eux, n'en ont presque jamais.</p>`;
+      };
+      mailAvatar.onerror = () => {
+        mailAvatar.style.display = 'none';
+        mailGravatar.innerHTML = '<p class="hint" style="margin:0">Aucune photo publique liée à cette adresse sur Gravatar.</p>';
+      };
+      mailAvatar.src = `https://gravatar.com/avatar/${h}?s=144&d=404`;
+    } catch (_) {
+      mailGravatar.innerHTML = '<p class="hint" style="margin:0">Vérification Gravatar indisponible.</p>';
+    }
+
+    mailBouton.disabled = false;
+    mailBouton.textContent = 'Vérifier';
   });
 
   /* ========== PWA ========== */
