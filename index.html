@@ -433,7 +433,7 @@
   </section>
 </main>
 
-<footer>À utiliser de façon responsable — respecte la vie privée des personnes.</footer>
+<footer>À utiliser de façon responsable — respecte la vie privée des personnes.<br><small>version 8 · Safe Browsing</small></footer>
 
 <script>
   const dropzone = document.getElementById('dropzone');
@@ -971,7 +971,25 @@
 
   const SUFFIXES_DOUBLES = ['gouv.fr', 'asso.fr', 'co.uk', 'org.uk', 'com.au', 'co.jp', 'com.br', 'co.nz', 'co.za', 'com.tr'];
 
+  // Plateformes d'hébergement : chaque sous-domaine est le site de quelqu'un de différent
+  const PLATEFORMES = ['appspot.com', 'github.io', 'herokuapp.com', 'vercel.app', 'netlify.app', 'pages.dev',
+    'workers.dev', 'web.app', 'firebaseapp.com', 'blogspot.com', 'wordpress.com', 'wixsite.com', 'wixstudio.io',
+    'azurewebsites.net', 'cloudfront.net', 'onrender.com', 'glitch.me', 'weebly.com', '000webhostapp.com',
+    'ngrok-free.app', 'ngrok.io', 'replit.app', 'repl.co', 'framer.website', 'webflow.io', 'square.site',
+    'godaddysites.com', 'r2.dev', 'storage.googleapis.com', 'firebasestorage.googleapis.com', 'translate.goog',
+    'duckdns.org', 'ddns.net', 'mystrikingly.com', 'carrd.co', 'gitbook.io', 'surge.sh', 'fly.dev',
+    'railway.app', 'myshopify.com', 'jimdosite.com', 'site123.me', 'sharepoint.com', 'my.canva.site', 'notion.site'];
+
+  function plateformeDe(h) {
+    return PLATEFORMES.find(p => h === p || h.endsWith('.' + p)) || null;
+  }
+
   function domaineRacine(h) {
+    const pf = plateformeDe(h);
+    if (pf && h !== pf) {
+      const reste = h.slice(0, -pf.length - 1).split('.');
+      return reste[reste.length - 1] + '.' + pf;
+    }
     const p = h.split('.');
     if (p.length <= 2) return h;
     const d2 = p.slice(-2).join('.');
@@ -1001,6 +1019,10 @@
         s.push(['danger', `Le nom « ${marque} » apparaît, mais le site est <strong>${esc(racine)}</strong>, qui n'appartient pas à cette marque.`]);
         break;
       }
+    }
+    const pf = plateformeDe(h);
+    if (pf) {
+      s.push(['info', `Site hébergé sur une plateforme gratuite (${esc(pf)}) : n'importe qui peut y créer une page en quelques minutes, y compris des arnaqueurs.`]);
     }
     if (RACCOURCISSEURS.includes(h) || RACCOURCISSEURS.includes(racine)) {
       s.push(['info', `Raccourcisseur de lien (${esc(racine)}) : il cache la vraie destination.`]);
@@ -1128,7 +1150,9 @@
       lienDomaineFinal = racine;
       htmlFin += ligne('Site', esc(hFinal));
       if (res.titre) htmlFin += ligne('Titre de la page', esc(res.titre));
-      try {
+      const pfFinal = plateformeDe(hFinal);
+      if (pfFinal) htmlFin += ligne('Hébergé sur', esc(pfFinal) + '<br><small>l\'âge de la plateforme ne dit rien sur ce site</small>');
+      if (!pfFinal) try {
         const d = await lireRdap(racine);
         const cree = evenement(d, 'registration');
         if (cree) {
@@ -1138,7 +1162,7 @@
           else if (jours < 365) signaux.push(['attention', `Domaine récent (${anciennete(cree)}) : les sites d'arnaque vivent rarement plus de quelques mois.`]);
         }
       } catch (_) {}
-      if (hFinal !== racine && !hFinal.startsWith('www.')) {
+      if (!pfFinal && hFinal !== racine && !hFinal.startsWith('www.')) {
         try {
           const essai = 'gojo-' + Math.random().toString(36).slice(2, 10) + '.' + racine;
           const ips = await lireDns(essai, 'A');
