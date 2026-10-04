@@ -201,6 +201,22 @@
     width: 100%; min-height: 80px; margin-top: 10px; padding: 10px; font: inherit; font-size: 0.93rem;
     border: 1px solid var(--border); border-radius: 8px; background: var(--bg); color: var(--text); resize: vertical;
   }
+  .champ {
+    width: 100%; padding: 10px 12px; font: inherit; font-size: 0.95rem; margin-top: 8px;
+    border: 1px solid var(--border); border-radius: 8px; background: var(--bg); color: var(--text);
+  }
+  select.champ { margin-top: 0; }
+  .element { padding: 12px 0; border-bottom: 1px solid var(--border); }
+  .element:last-child { border-bottom: none; }
+  .element-tete { display: flex; justify-content: space-between; gap: 8px; align-items: center; font-size: 0.82rem; color: var(--muted); }
+  .element h3 { margin: 4px 0; font-size: 1rem; }
+  .element .texte { white-space: pre-wrap; word-break: break-word; font-size: 0.9rem; margin: 4px 0; }
+  .element code { display: block; word-break: break-all; font-size: 0.85rem; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 6px 8px; margin: 4px 0; }
+  .element img { max-width: 100%; max-height: 240px; border-radius: 8px; margin-top: 6px; cursor: zoom-in; }
+  .mini { border: none; background: none; color: var(--muted); cursor: pointer; font-size: 0.85rem; padding: 2px 4px; }
+  .mini:hover { color: var(--accent); }
+  .carnet-ajout { margin: 0 0 16px; }
+  .carnet-ok { margin-left: 8px; font-size: 0.85rem; color: var(--ok); }
   #mailAvatar { width: 72px; height: 72px; border-radius: 50%; display: none; margin-bottom: 8px; }
   .bouton-sec {
     margin-top: 10px;
@@ -237,6 +253,7 @@
   <button data-tool="ip">🛰️ IP</button>
   <button data-tool="email">✉️ E-mail</button>
   <button data-tool="geo">🗺️ Où est-ce ?</button>
+  <button data-tool="carnet">📒 Carnet</button>
   <button data-tool="pseudo">👤 Pseudo</button>
   <button data-tool="inverse">🖼️ Image inversée</button>
   <button data-tool="archives">🕰️ Archives</button>
@@ -517,6 +534,50 @@
     </div>
   </section>
 
+  <section id="tool-carnet" class="hidden">
+    <div class="card">
+      <h2>Carnet d'enquête</h2>
+      <p class="hint">Range tes trouvailles au fil d'une recherche : notes, liens, captures et résultats des autres outils. Tout reste sur cet appareil.</p>
+      <div class="ligne-form">
+        <select id="carnetChoix" class="champ" style="flex:1"></select>
+      </div>
+      <div class="outils-geo">
+        <button type="button" class="bouton-sec" id="carnetNouvelle">➕ Nouvelle enquête</button>
+        <button type="button" class="bouton-sec" id="carnetRenommer">✏️ Renommer</button>
+        <button type="button" class="bouton-sec" id="carnetSupprimer">🗑️ Supprimer</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Ajouter une trouvaille</h2>
+      <form id="carnetForm">
+        <input type="text" id="carnetTitre" class="champ" placeholder="Titre (facultatif)" autocomplete="off">
+        <textarea id="carnetTexte" class="notes" placeholder="Note, observation, hypothèse…"></textarea>
+        <input type="text" id="carnetLien" class="champ" placeholder="Lien source (facultatif)" autocomplete="off" autocapitalize="off" spellcheck="false">
+        <input type="file" id="carnetImage" accept="image/*" class="champ">
+        <button type="submit" class="bouton-sec" style="width:100%">📒 Ajouter au carnet</button>
+      </form>
+      <p id="carnetErreur" class="erreur hidden"></p>
+    </div>
+
+    <div class="card">
+      <h2>Chronologie</h2>
+      <div id="carnetListe"></div>
+    </div>
+
+    <div class="card">
+      <h2>Exporter et sauvegarder</h2>
+      <div class="outils-geo">
+        <button type="button" class="bouton-sec" id="carnetRapport">📄 Rapport (à imprimer en PDF)</button>
+        <button type="button" class="bouton-sec" id="carnetSauver">💾 Sauvegarde complète</button>
+        <button type="button" class="bouton-sec" id="carnetImporter">📥 Importer une sauvegarde</button>
+      </div>
+      <input type="file" id="carnetFichierImport" accept="application/json,.json" class="hidden">
+      <p id="carnetInfo" class="hint" style="margin:10px 0 0"></p>
+      <p class="hint" style="margin:10px 0 0">⚠️ Le carnet est stocké dans ce navigateur uniquement. Si tu effaces les données du site ou changes de téléphone, il disparaît : fais une <strong>sauvegarde complète</strong> de temps en temps.</p>
+    </div>
+  </section>
+
   <section id="tool-pseudo" class="hidden">
     <div class="card">
       <h2>Recherche de pseudo</h2>
@@ -588,7 +649,7 @@
   </section>
 </main>
 
-<footer>À utiliser de façon responsable — respecte la vie privée des personnes.<br><small>version 11 · Où est-ce ?</small></footer>
+<footer>À utiliser de façon responsable — respecte la vie privée des personnes.<br><small>version 12 · Carnet d'enquête</small></footer>
 
 <script>
   const dropzone = document.getElementById('dropzone');
@@ -2015,6 +2076,326 @@
     }
     geoChercher.disabled = false; geoChercher.textContent = 'Situer';
   });
+
+  /* ========== Carnet d'enquête ========== */
+  // Base séparée au nom unique : ne se mélange pas aux autres apps de kipetchis.github.io
+  const DB_NOM = 'gojo-cherche-carnet';
+  const CLE_ACTUELLE = 'gojo-cherche-enquete-actuelle';
+  let dbPromesse = null;
+
+  function ouvrirDB() {
+    if (dbPromesse) return dbPromesse;
+    dbPromesse = new Promise((ok, ko) => {
+      const r = indexedDB.open(DB_NOM, 1);
+      r.onupgradeneeded = () => {
+        const d = r.result;
+        if (!d.objectStoreNames.contains('enquetes')) d.createObjectStore('enquetes', { keyPath: 'id' });
+        if (!d.objectStoreNames.contains('elements')) d.createObjectStore('elements', { keyPath: 'id' }).createIndex('enquete', 'enquete');
+      };
+      r.onsuccess = () => ok(r.result);
+      r.onerror = () => { dbPromesse = null; ko(r.error); };
+    });
+    return dbPromesse;
+  }
+  async function dbOp(store, mode, action) {
+    const d = await ouvrirDB();
+    return new Promise((ok, ko) => {
+      const t = d.transaction(store, mode);
+      const req = action(t.objectStore(store));
+      t.oncomplete = () => ok(req ? req.result : undefined);
+      t.onerror = () => ko(t.error);
+      t.onabort = () => ko(t.error);
+    });
+  }
+  const dbTout = store => dbOp(store, 'readonly', s => s.getAll());
+  const dbMettre = (store, obj) => dbOp(store, 'readwrite', s => s.put(obj));
+  const dbSuppr = (store, id) => dbOp(store, 'readwrite', s => s.delete(id));
+  const dbParEnquete = id => dbOp('elements', 'readonly', s => s.index('enquete').getAll(id));
+  const nouvelId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+
+  function lireActuelle() { try { return localStorage.getItem(CLE_ACTUELLE); } catch (_) { return null; } }
+  function ecrireActuelle(id) { try { localStorage.setItem(CLE_ACTUELLE, id); } catch (_) {} }
+
+  if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
+
+  const carnetChoix = document.getElementById('carnetChoix');
+  const carnetListe = document.getElementById('carnetListe');
+  const carnetForm = document.getElementById('carnetForm');
+  const carnetTitre = document.getElementById('carnetTitre');
+  const carnetTexte = document.getElementById('carnetTexte');
+  const carnetLien = document.getElementById('carnetLien');
+  const carnetImage = document.getElementById('carnetImage');
+  const carnetErreur = document.getElementById('carnetErreur');
+  const carnetInfo = document.getElementById('carnetInfo');
+  const carnetFichierImport = document.getElementById('carnetFichierImport');
+
+  async function enqueteActuelle() {
+    const toutes = (await dbTout('enquetes')).sort((a, b) => a.cree - b.cree);
+    let id = lireActuelle();
+    let e = toutes.find(x => x.id === id);
+    if (!e && toutes.length) e = toutes[toutes.length - 1];
+    if (!e) {
+      e = { id: nouvelId(), nom: 'Mon enquête', cree: Date.now(), auto: true };
+      await dbMettre('enquetes', e);
+    }
+    ecrireActuelle(e.id);
+    return e;
+  }
+
+  function dateCourte(t) {
+    return new Date(t).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' });
+  }
+
+  const urlsObjets = [];
+  async function afficherCarnet() {
+    let actuelle;
+    try { actuelle = await enqueteActuelle(); } catch (_) {
+      carnetListe.innerHTML = '<p class="erreur">Stockage indisponible dans ce navigateur (navigation privée ?).</p>';
+      return;
+    }
+    const toutes = (await dbTout('enquetes')).sort((a, b) => a.cree - b.cree);
+    carnetChoix.innerHTML = toutes.map(e => `<option value="${esc(e.id)}"${e.id === actuelle.id ? ' selected' : ''}>${esc(e.nom)}</option>`).join('');
+
+    urlsObjets.splice(0).forEach(u => URL.revokeObjectURL(u));
+    const elements = (await dbParEnquete(actuelle.id)).sort((a, b) => b.date - a.date);
+    if (!elements.length) {
+      carnetListe.innerHTML = '<p class="hint" style="margin:0">Aucune trouvaille pour l’instant. Ajoute une note ci-dessus, ou utilise le bouton « 📒 Ajouter au carnet » dans les résultats des autres outils.</p>';
+      return;
+    }
+    carnetListe.innerHTML = elements.map(el => {
+      let img = '';
+      if (el.image) {
+        const u = URL.createObjectURL(el.image);
+        urlsObjets.push(u);
+        img = `<img src="${u}" alt="Capture" data-ouvrir="${u}">`;
+      }
+      return `<div class="element">
+        <div class="element-tete"><span>${dateCourte(el.date)}${el.outil ? ' · ' + esc(el.outil) : ''}</span>
+          <span>${el.lien ? `<button class="mini" data-copier="${esc(el.lien)}">📋 lien</button>` : ''}<button class="mini" data-suppr="${esc(el.id)}">🗑️</button></span></div>
+        ${el.titre ? `<h3>${esc(el.titre)}</h3>` : ''}
+        ${el.texte ? `<div class="texte">${esc(el.texte)}</div>` : ''}
+        ${el.lien ? `<code>${esc(el.lien)}</code>` : ''}
+        ${img}
+      </div>`;
+    }).join('');
+  }
+
+  carnetListe.addEventListener('click', async e => {
+    const suppr = e.target.closest('[data-suppr]');
+    const copier = e.target.closest('[data-copier]');
+    const ouvrir = e.target.closest('[data-ouvrir]');
+    if (suppr && confirm('Supprimer cette trouvaille ?')) { await dbSuppr('elements', suppr.dataset.suppr); afficherCarnet(); }
+    if (copier) { try { await navigator.clipboard.writeText(copier.dataset.copier); copier.textContent = '✔️ copié'; } catch (_) {} }
+    if (ouvrir) window.open(ouvrir.dataset.ouvrir, '_blank');
+  });
+
+  carnetChoix.addEventListener('change', () => { ecrireActuelle(carnetChoix.value); afficherCarnet(); });
+
+  document.getElementById('carnetNouvelle').addEventListener('click', async () => {
+    const nom = (prompt('Nom de la nouvelle enquête :', '') || '').trim();
+    if (!nom) return;
+    const e = { id: nouvelId(), nom, cree: Date.now() };
+    await dbMettre('enquetes', e);
+    ecrireActuelle(e.id);
+    afficherCarnet();
+  });
+  document.getElementById('carnetRenommer').addEventListener('click', async () => {
+    const e = await enqueteActuelle();
+    const nom = (prompt('Nouveau nom :', e.nom) || '').trim();
+    if (!nom) return;
+    e.nom = nom;
+    await dbMettre('enquetes', e);
+    afficherCarnet();
+  });
+  document.getElementById('carnetSupprimer').addEventListener('click', async () => {
+    const e = await enqueteActuelle();
+    const els = await dbParEnquete(e.id);
+    if (!confirm(`Supprimer l’enquête « ${e.nom} » et ses ${els.length} trouvaille(s) ? C’est définitif.`)) return;
+    for (const el of els) await dbSuppr('elements', el.id);
+    await dbSuppr('enquetes', e.id);
+    try { localStorage.removeItem(CLE_ACTUELLE); } catch (_) {}
+    afficherCarnet();
+  });
+
+  function reduireImage(fichier, max = 1600) {
+    return new Promise((ok, ko) => {
+      const img = new Image();
+      img.onload = () => {
+        const r = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
+        const c = document.createElement('canvas');
+        c.width = Math.round(img.naturalWidth * r); c.height = Math.round(img.naturalHeight * r);
+        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+        URL.revokeObjectURL(img.src);
+        c.toBlob(b => b ? ok(b) : ko(new Error('image')), 'image/jpeg', 0.85);
+      };
+      img.onerror = () => ko(new Error('image'));
+      img.src = URL.createObjectURL(fichier);
+    });
+  }
+
+  async function ajouterElement(el) {
+    const e = await enqueteActuelle();
+    await dbMettre('elements', { id: nouvelId(), enquete: e.id, date: Date.now(), ...el });
+    return e;
+  }
+
+  carnetForm.addEventListener('submit', async ev => {
+    ev.preventDefault();
+    carnetErreur.classList.add('hidden');
+    const titre = carnetTitre.value.trim(), texte = carnetTexte.value.trim(), lien = carnetLien.value.trim();
+    const fichier = carnetImage.files[0];
+    if (!texte && !lien && !fichier) {
+      carnetErreur.textContent = 'Ajoute au moins une note, un lien ou une image.';
+      carnetErreur.classList.remove('hidden');
+      return;
+    }
+    let image = null;
+    if (fichier) {
+      try { image = await reduireImage(fichier); } catch (_) {
+        carnetErreur.textContent = 'Image illisible.'; carnetErreur.classList.remove('hidden'); return;
+      }
+    }
+    try {
+      await ajouterElement({ titre, texte, lien, image, outil: 'Note' });
+    } catch (_) {
+      carnetErreur.textContent = 'Enregistrement impossible (stockage plein ou indisponible).';
+      carnetErreur.classList.remove('hidden');
+      return;
+    }
+    carnetForm.reset();
+    afficherCarnet();
+  });
+
+  // --- Boutons « Ajouter au carnet » dans les autres outils ---
+  const SOURCES_CARNET = [
+    ['results', 'Photo', () => (fileInput.files[0] && fileInput.files[0].name) || 'photo'],
+    ['domResults', 'Domaine', () => domInput.value],
+    ['lienResults', 'Lien suspect', () => lienInput.value],
+    ['ipResults', 'Adresse IP', () => ipInput.value],
+    ['mailResults', 'E-mail', () => mailInput.value],
+    ['psResults', 'Pseudo', () => psInput.value],
+    ['arcResults', 'Archives', () => arcInput.value],
+    ['invResults', 'Image inversée', () => invInput.value],
+    ['geoCartes', 'Où est-ce ?', () => geoLieu.value || 'position']
+  ];
+
+  function texteVisible(conteneur) {
+    const caches = [...conteneur.querySelectorAll('button, .carnet-ok')];
+    caches.forEach(b => { b.dataset.av = b.style.display; b.style.display = 'none'; });
+    const t = conteneur.innerText;
+    caches.forEach(b => { b.style.display = b.dataset.av; });
+    return t.replace(/\n{3,}/g, '\n\n').trim();
+  }
+
+  SOURCES_CARNET.forEach(([idConteneur, outil, sujet]) => {
+    const conteneur = document.getElementById(idConteneur);
+    if (!conteneur) return;
+    const bloc = document.createElement('div');
+    bloc.className = 'carnet-ajout';
+    bloc.innerHTML = '<button type="button" class="bouton-sec">📒 Ajouter au carnet</button><span class="carnet-ok"></span>';
+    conteneur.appendChild(bloc);
+    const bouton = bloc.querySelector('button'), ok = bloc.querySelector('.carnet-ok');
+    bouton.addEventListener('click', async () => {
+      let texte = texteVisible(conteneur);
+      if (idConteneur === 'geoCartes') {
+        const coches = INDICES.filter((_, i) => document.getElementById('indice' + i).checked).map(x => '• ' + x[0]);
+        const notes = document.getElementById('geoNotes').value.trim();
+        if (coches.length) texte += '\n\nIndices relevés :\n' + coches.join('\n');
+        if (notes) texte += '\n\nNotes :\n' + notes;
+      }
+      let lien = '';
+      if (idConteneur === 'lienResults' || idConteneur === 'invResults') lien = sujet();
+      try {
+        const e = await ajouterElement({ titre: `${outil} : ${sujet()}`, texte, lien, image: null, outil });
+        ok.textContent = `✔️ Ajouté à « ${e.nom} »`;
+      } catch (_) {
+        ok.textContent = '✖️ Enregistrement impossible';
+      }
+      setTimeout(() => { ok.textContent = ''; }, 3000);
+    });
+  });
+
+  // --- Exports ---
+  function blobEnDataURL(b) {
+    return new Promise(ok => { const r = new FileReader(); r.onload = () => ok(r.result); r.readAsDataURL(b); });
+  }
+  async function dataURLEnBlob(d) { return (await fetch(d)).blob(); }
+  function telecharger(contenu, nom, type) {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([contenu], { type }));
+    a.download = nom;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+  }
+  function nomFichier(t) { return t.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '').toLowerCase() || 'enquete'; }
+
+  document.getElementById('carnetRapport').addEventListener('click', async () => {
+    const e = await enqueteActuelle();
+    const els = (await dbParEnquete(e.id)).sort((a, b) => a.date - b.date);
+    const blocs = [];
+    for (const el of els) {
+      const img = el.image ? `<img src="${await blobEnDataURL(el.image)}" alt="">` : '';
+      blocs.push(`<section><p class="date">${dateCourte(el.date)}${el.outil ? ' · ' + esc(el.outil) : ''}</p>
+        ${el.titre ? `<h2>${esc(el.titre)}</h2>` : ''}${el.texte ? `<div class="t">${esc(el.texte)}</div>` : ''}
+        ${el.lien ? `<p class="lien">${esc(el.lien)}</p>` : ''}${img}</section>`);
+    }
+    const html = `<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>${esc(e.nom)} — rapport d'enquête</title><style>
+body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;max-width:800px;margin:0 auto;padding:24px 16px;color:#1d2330;background:#fff;line-height:1.5}
+h1{margin:0}.sous{color:#6b7385;margin:4px 0 24px}section{border-top:1px solid #dde1e8;padding:14px 0;break-inside:avoid}
+.date{color:#6b7385;font-size:.85rem;margin:0}h2{font-size:1.05rem;margin:4px 0}.t{white-space:pre-wrap;font-size:.92rem}
+.lien{font-family:monospace;font-size:.85rem;word-break:break-all;background:#f5f6f8;padding:6px 8px;border-radius:6px}
+img{max-width:100%;max-height:420px;border-radius:6px;margin-top:6px}.pied{color:#6b7385;font-size:.8rem;margin-top:24px}
+@media print{body{padding:0}}</style></head><body>
+<h1>🔎 ${esc(e.nom)}</h1><p class="sous">Rapport d'enquête · ${els.length} trouvaille(s) · généré le ${new Date().toLocaleString('fr-FR', { dateStyle: 'long', timeStyle: 'short' })}</p>
+${blocs.join('\n') || '<p>Aucune trouvaille.</p>'}
+<p class="pied">Généré avec Gojo cherche ! — pour enregistrer en PDF : menu Imprimer → « Enregistrer au format PDF ».</p>
+</body></html>`;
+    telecharger(html, `rapport-${nomFichier(e.nom)}.html`, 'text/html');
+    carnetInfo.textContent = 'Rapport téléchargé. Ouvre-le puis Imprimer → « Enregistrer au format PDF » pour en faire un PDF.';
+  });
+
+  document.getElementById('carnetSauver').addEventListener('click', async () => {
+    const enquetes = await dbTout('enquetes');
+    const elements = [];
+    for (const el of await dbTout('elements')) {
+      elements.push({ ...el, image: el.image ? await blobEnDataURL(el.image) : null });
+    }
+    const jour = new Date().toISOString().slice(0, 10);
+    telecharger(JSON.stringify({ format: 'gojo-cherche-carnet', version: 1, date: Date.now(), enquetes, elements }), `gojo-carnet-${jour}.json`, 'application/json');
+    carnetInfo.textContent = `Sauvegarde téléchargée : ${enquetes.length} enquête(s), ${elements.length} trouvaille(s).`;
+  });
+
+  document.getElementById('carnetImporter').addEventListener('click', () => carnetFichierImport.click());
+  carnetFichierImport.addEventListener('change', async () => {
+    const f = carnetFichierImport.files[0];
+    carnetFichierImport.value = '';
+    if (!f) return;
+    try {
+      const d = JSON.parse(await f.text());
+      if (d.format !== 'gojo-cherche-carnet') throw new Error('format');
+      const existantes = new Set((await dbTout('enquetes')).map(x => x.id));
+      const deja = new Set((await dbTout('elements')).map(x => x.id));
+      let nE = 0, nEl = 0, premiere = null;
+      // L'enquête vide créée automatiquement n'a plus de raison d'être
+      for (const e of await dbTout('enquetes')) {
+        if (e.auto && !(await dbParEnquete(e.id)).length) { await dbSuppr('enquetes', e.id); existantes.delete(e.id); }
+      }
+      for (const e of d.enquetes || []) if (!existantes.has(e.id)) { await dbMettre('enquetes', e); nE++; premiere = premiere || e.id; }
+      for (const el of d.elements || []) {
+        if (deja.has(el.id)) continue;
+        await dbMettre('elements', { ...el, image: el.image ? await dataURLEnBlob(el.image) : null });
+        nEl++;
+      }
+      if (premiere) ecrireActuelle(premiere);
+      carnetInfo.textContent = `Import terminé : ${nE} enquête(s) et ${nEl} trouvaille(s) ajoutées (les doublons sont ignorés).`;
+      afficherCarnet();
+    } catch (_) {
+      carnetInfo.textContent = 'Ce fichier n’est pas une sauvegarde de Gojo cherche !';
+    }
+  });
+
+  document.querySelector('nav button[data-tool="carnet"]').addEventListener('click', afficherCarnet);
 
   /* ========== PWA ========== */
   if ('serviceWorker' in navigator) {
