@@ -181,6 +181,24 @@
   .site { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); }
   .site:last-child { border-bottom: none; }
   .site.absent { opacity: 0.55; }
+  .badge.danger { background: color-mix(in srgb, #e53e3e 20%, transparent); color: #e53e3e; }
+  @media (prefers-color-scheme: dark) { .badge.danger { color: #fc8181; } }
+  .verdict { font-size: 1.15rem; font-weight: 700; margin-bottom: 10px; }
+  .signal { display: flex; gap: 10px; align-items: flex-start; padding: 6px 0; font-size: 0.93rem; }
+  .signal .badge { flex: 0 0 auto; }
+  .etape { padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 0.88rem; }
+  .etape:last-child { border-bottom: none; }
+  .etape code { display: block; word-break: break-all; color: var(--text); margin-top: 4px; font-size: 0.85rem; }
+  .bouton-sec {
+    margin-top: 10px;
+    padding: 10px 14px;
+    border: 1px solid var(--accent);
+    border-radius: 8px;
+    background: transparent;
+    color: var(--accent);
+    font-size: 0.95rem;
+    cursor: pointer;
+  }
   .ligne-date input {
     padding: 8px 10px;
     font-size: 0.95rem;
@@ -202,6 +220,7 @@
 <nav>
   <button class="active" data-tool="exif">📷 Photo</button>
   <button data-tool="domaine">🌐 Domaine</button>
+  <button data-tool="lien">🔗 Lien</button>
   <button data-tool="pseudo">👤 Pseudo</button>
   <button data-tool="inverse">🖼️ Image inversée</button>
   <button data-tool="archives">🕰️ Archives</button>
@@ -298,6 +317,46 @@
         <li><strong>Recadre</strong> sur un détail (enseigne, monument, paysage) si l'image entière ne donne rien.</li>
         <li><strong>Une capture d'écran</strong> perd les métadonnées mais reste trouvable par son contenu.</li>
         <li><strong>Image retournée ou retouchée ?</strong> Essaie la version miroir : certains faussaires l'inversent pour tromper les moteurs.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section id="tool-lien" class="hidden">
+    <div class="card">
+      <h2>Analyser un lien suspect</h2>
+      <p class="hint">Colle un lien reçu par SMS, mail ou message. Il est ouvert par un serveur intermédiaire, jamais par ton téléphone : <strong>ne clique pas</strong> sur l'original.</p>
+      <form id="lienForm" class="ligne-form">
+        <input type="text" id="lienInput" placeholder="https://bit.ly/…" autocomplete="off" autocapitalize="off" spellcheck="false" inputmode="url">
+        <button type="submit" id="lienBouton">Analyser</button>
+      </form>
+      <p id="lienErreur" class="erreur hidden"></p>
+    </div>
+
+    <div id="lienResults" class="hidden">
+      <div class="card">
+        <h2>Verdict</h2>
+        <div class="verdict" id="lienVerdict"></div>
+        <div id="lienSignaux"></div>
+      </div>
+      <div class="card">
+        <h2>Destination finale</h2>
+        <div class="summary" id="lienFinale"></div>
+        <button type="button" class="bouton-sec hidden" id="lienVersDomaine">🌐 Analyser ce domaine en détail</button>
+      </div>
+      <div class="card">
+        <h2>Chemin parcouru</h2>
+        <p class="hint">Chaque étape par laquelle le lien fait passer avant d'arriver à destination. Les adresses ne sont volontairement pas cliquables.</p>
+        <div id="lienEtapes"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Bon à savoir</h2>
+      <ul class="conseils">
+        <li><strong>Un lien « propre » n'est pas une garantie.</strong> Certains sites d'arnaque montrent une page anodine aux robots et la vraie arnaque aux téléphones.</li>
+        <li><strong>L'expéditeur peut voir que le lien a été ouvert</strong> (depuis un serveur, pas depuis chez toi). Ce n'est pas grave, mais à savoir.</li>
+        <li><strong>Les vrais services</strong> (La Poste, Ameli, impôts, banques) ne demandent jamais de payer ou de saisir ta carte via un lien SMS.</li>
+        <li><strong>En cas de doute</strong>, transfère le SMS au <strong>33700</strong> (signalement gratuit des SMS indésirables).</li>
       </ul>
     </div>
   </section>
@@ -851,6 +910,231 @@
 
     psBouton.disabled = false;
     psBouton.textContent = 'Vérifier';
+  });
+
+  /* ========== Outil Lien suspect ========== */
+  const WORKER_LIEN = WORKER_PSEUDO + 'lien?url=';
+
+  const lienForm = document.getElementById('lienForm');
+  const lienInput = document.getElementById('lienInput');
+  const lienBouton = document.getElementById('lienBouton');
+  const lienErreur = document.getElementById('lienErreur');
+  const lienResults = document.getElementById('lienResults');
+  const lienVerdict = document.getElementById('lienVerdict');
+  const lienSignaux = document.getElementById('lienSignaux');
+  const lienFinale = document.getElementById('lienFinale');
+  const lienEtapes = document.getElementById('lienEtapes');
+  const lienVersDomaine = document.getElementById('lienVersDomaine');
+
+  const RACCOURCISSEURS = ['bit.ly', 'tinyurl.com', 't.co', 'goo.gl', 'ow.ly', 'is.gd', 'cutt.ly', 'rebrand.ly',
+    'shorturl.at', 'tiny.cc', 's.id', 'rb.gy', 't.ly', 'buff.ly', 'lnkd.in', 'shorturl.com', 'v.gd', 'qrco.de', 'urlz.fr', 'bit.do'];
+
+  const EXTENSIONS_RISQUEES = ['xyz', 'top', 'icu', 'click', 'live', 'shop', 'online', 'site', 'buzz', 'cfd', 'sbs',
+    'rest', 'cyou', 'monster', 'quest', 'cam', 'fun', 'lol', 'mom', 'bond', 'support', 'help', 'info', 'vip'];
+
+  // Marques souvent imitées → leurs vrais domaines
+  const MARQUES = {
+    laposte: ['laposte.fr', 'laposte.net', 'labanquepostale.fr'],
+    labanquepostale: ['labanquepostale.fr'],
+    colissimo: ['colissimo.fr', 'laposte.fr'],
+    chronopost: ['chronopost.fr'],
+    mondialrelay: ['mondialrelay.fr', 'mondialrelay.com'],
+    ameli: ['ameli.fr'],
+    impots: ['impots.gouv.fr'],
+    antai: ['antai.gouv.fr'],
+    francetravail: ['francetravail.fr'],
+    vinted: ['vinted.fr', 'vinted.com'],
+    leboncoin: ['leboncoin.fr'],
+    dhl: ['dhl.com', 'dhl.fr', 'dhl.de'],
+    fedex: ['fedex.com'],
+    paypal: ['paypal.com', 'paypal.fr', 'paypal.me'],
+    amazon: ['amazon.fr', 'amazon.com', 'amazon.de', 'amazon.co.uk'],
+    netflix: ['netflix.com'],
+    apple: ['apple.com', 'icloud.com'],
+    icloud: ['icloud.com', 'apple.com'],
+    microsoft: ['microsoft.com', 'live.com', 'office.com', 'outlook.com'],
+    whatsapp: ['whatsapp.com', 'whatsapp.net'],
+    instagram: ['instagram.com'],
+    facebook: ['facebook.com', 'fb.com'],
+    boursorama: ['boursorama.com', 'boursorama-banque.com'],
+    creditagricole: ['credit-agricole.fr', 'credit-agricole.com'],
+    societegenerale: ['societegenerale.fr', 'societegenerale.com'],
+    bnpparibas: ['bnpparibas', 'bnpparibas.net', 'bnpparibas.com', 'mabanque.bnpparibas'],
+    engie: ['engie.fr', 'engie.com']
+  };
+
+  const MOTS_APPATS = ['colis', 'livraison', 'suivi', 'paiement', 'payment', 'frais', 'amende', 'remboursement',
+    'verify', 'verification', 'login', 'secure', 'securite', 'compte', 'update', 'confirm', 'carte', 'vitale'];
+
+  const SUFFIXES_DOUBLES = ['gouv.fr', 'asso.fr', 'co.uk', 'org.uk', 'com.au', 'co.jp', 'com.br', 'co.nz', 'co.za', 'com.tr'];
+
+  function domaineRacine(h) {
+    const p = h.split('.');
+    if (p.length <= 2) return h;
+    const d2 = p.slice(-2).join('.');
+    return SUFFIXES_DOUBLES.includes(d2) ? p.slice(-3).join('.') : d2;
+  }
+
+  function signauxUrl(texte) {
+    const s = [];
+    let u;
+    try { u = new URL(texte); } catch (_) { return s; }
+    const h = u.hostname.toLowerCase();
+    const racine = domaineRacine(h);
+    const tld = h.split('.').pop();
+
+    if (/^\d{1,3}(\.\d{1,3}){3}$/.test(h) || h.startsWith('[')) {
+      s.push(['danger', `Adresse IP brute (${esc(h)}) à la place d'un nom de site : les vrais services n'utilisent jamais ça.`]);
+    }
+    if (h.includes('xn--')) {
+      s.push(['danger', `Nom de domaine avec des caractères déguisés (${esc(h)}) : il peut imiter un site connu avec des lettres d'un autre alphabet.`]);
+    }
+    if (u.username || u.password) {
+      s.push(['danger', 'Le lien contient un « @ » avant le site : tout ce qui précède est un leurre, le vrai site est après.']);
+    }
+    const hSansTiret = h.replace(/-/g, '');
+    for (const [marque, officiels] of Object.entries(MARQUES)) {
+      if (hSansTiret.includes(marque) && !officiels.includes(racine)) {
+        s.push(['danger', `Le nom « ${marque} » apparaît, mais le site est <strong>${esc(racine)}</strong>, qui n'appartient pas à cette marque.`]);
+        break;
+      }
+    }
+    if (RACCOURCISSEURS.includes(h) || RACCOURCISSEURS.includes(racine)) {
+      s.push(['info', `Raccourcisseur de lien (${esc(racine)}) : il cache la vraie destination.`]);
+    }
+    if (EXTENSIONS_RISQUEES.includes(tld)) {
+      s.push(['attention', `Extension « .${esc(tld)} » : bon marché et très utilisée par les arnaques.`]);
+    }
+    if (u.protocol === 'http:') {
+      s.push(['attention', 'Connexion non chiffrée (http) : à éviter absolument pour saisir des informations.']);
+    }
+    if (h.split('.').length > 4) {
+      s.push(['attention', `Beaucoup de sous-domaines (${esc(h)}) : technique pour faire croire à un site officiel.`]);
+    }
+    const bas = (h + u.pathname).toLowerCase();
+    const mots = MOTS_APPATS.filter(m => bas.includes(m));
+    if (mots.length) {
+      s.push(['info', `Mots souvent utilisés dans les arnaques : ${mots.map(esc).join(', ')}.`]);
+    }
+    return s;
+  }
+
+  const NIVEAUX = {
+    danger:    { badge: 'danger', texte: 'Danger' },
+    attention: { badge: 'warn',   texte: 'Attention' },
+    info:      { badge: 'neutre', texte: 'Info' }
+  };
+
+  function libelleEtape(e) {
+    if (e.type === 'http') return `Redirection (${e.statut})`;
+    if (e.type === 'meta') return 'Redirection cachée dans la page';
+    if (e.type === 'injoignable') return 'Site injoignable';
+    if (e.type === 'bloque') return 'Adresse bloquée';
+    if (e.statut >= 400) return `Arrivée — erreur ${e.statut}`;
+    return `Arrivée (${e.statut})`;
+  }
+
+  let lienDomaineFinal = null;
+  lienVersDomaine.addEventListener('click', () => {
+    if (!lienDomaineFinal) return;
+    document.querySelector('nav button[data-tool="domaine"]').click();
+    domInput.value = lienDomaineFinal;
+    domForm.requestSubmit();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
+  lienForm.addEventListener('submit', async e => {
+    e.preventDefault();
+    lienErreur.classList.add('hidden');
+    let texte = lienInput.value.trim();
+    if (texte && !/^[a-z]+:\/\//i.test(texte)) texte = 'https://' + texte;
+
+    let ok = false;
+    try { const u = new URL(texte); ok = ['http:', 'https:'].includes(u.protocol) && u.hostname.includes('.'); } catch (_) {}
+    if (!ok) {
+      lienErreur.textContent = 'Ça ne ressemble pas à un lien. Exemple : https://bit.ly/abc123';
+      lienErreur.classList.remove('hidden');
+      return;
+    }
+
+    lienInput.value = texte;
+    lienBouton.disabled = true;
+    lienBouton.textContent = '…';
+    lienResults.classList.remove('hidden');
+    lienVerdict.textContent = 'Analyse en cours…';
+    lienSignaux.innerHTML = '';
+    lienFinale.innerHTML = '';
+    lienEtapes.innerHTML = '<p class="hint">Suivi des redirections…</p>';
+    lienVersDomaine.classList.add('hidden');
+    lienDomaineFinal = null;
+
+    // 1) Suivre les redirections via le Worker
+    let res = null;
+    try {
+      const r = await fetch(WORKER_LIEN + encodeURIComponent(texte));
+      res = await r.json();
+    } catch (_) {
+      res = { etapes: [], erreur: 'Le service de suivi ne répond pas.' };
+    }
+    const etapes = res.etapes || [];
+    const finale = res.finale || (etapes.length ? etapes[etapes.length - 1].url : texte);
+
+    // 2) Chemin
+    lienEtapes.innerHTML = etapes.length
+      ? etapes.map((et, i) => `<div class="etape"><strong>${i + 1}.</strong> ${libelleEtape(et)}<code>${esc(et.url)}</code></div>`).join('')
+      : '<p class="hint">Aucune étape récupérée.</p>';
+    if (res.erreur) lienEtapes.innerHTML += `<p class="erreur" style="margin-top:8px">${esc(res.erreur)}</p>`;
+
+    // 3) Signaux sur toutes les adresses du chemin
+    const adresses = [texte, ...etapes.map(et => et.url)];
+    const vus = new Set();
+    const signaux = [];
+    adresses.forEach(a => signauxUrl(a).forEach(([niv, msg]) => {
+      if (!vus.has(msg)) { vus.add(msg); signaux.push([niv, msg]); }
+    }));
+    const redirs = etapes.filter(et => et.type === 'http' || et.type === 'meta').length;
+    if (redirs >= 3) signaux.push(['attention', `${redirs} redirections successives : technique fréquente pour brouiller les pistes.`]);
+
+    // 4) Destination finale + âge du domaine
+    let hFinal = null;
+    try { hFinal = new URL(finale).hostname.toLowerCase(); } catch (_) {}
+    let htmlFin = '';
+    if (hFinal) {
+      const racine = domaineRacine(hFinal);
+      lienDomaineFinal = racine;
+      htmlFin += ligne('Site', esc(hFinal));
+      if (res.titre) htmlFin += ligne('Titre de la page', esc(res.titre));
+      try {
+        const d = await lireRdap(racine);
+        const cree = evenement(d, 'registration');
+        if (cree) {
+          htmlFin += ligne('Domaine créé le', `${formatJour(cree)}<br><small>${anciennete(cree)}</small>`);
+          const jours = (Date.now() - new Date(cree)) / 86400000;
+          if (jours < 90) signaux.unshift(['danger', `Le domaine ${esc(racine)} a été créé il y a seulement ${Math.max(0, Math.round(jours))} jours.`]);
+        }
+      } catch (_) {}
+      const q = encodeURIComponent(finale);
+      htmlFin += ligne('Réputation', `<a href="https://www.virustotal.com/gui/search/${q}" target="_blank" rel="noopener">VirusTotal</a> · <a href="https://urlscan.io/search/#${encodeURIComponent(racine)}" target="_blank" rel="noopener">urlscan.io</a>`);
+      lienVersDomaine.classList.remove('hidden');
+    }
+    lienFinale.innerHTML = htmlFin || '<p class="hint">Destination inconnue.</p>';
+
+    // 5) Verdict
+    const ordre = { danger: 0, attention: 1, info: 2 };
+    signaux.sort((a, b) => ordre[a[0]] - ordre[b[0]]);
+    const aDanger = signaux.some(s => s[0] === 'danger');
+    const aAttention = signaux.some(s => s[0] === 'attention');
+    lienVerdict.innerHTML = aDanger
+      ? '🚩 Très suspect : ne saisis aucune information'
+      : aAttention
+        ? '⚠️ Prudence : quelques signaux inhabituels'
+        : '✅ Aucun signal évident';
+    lienSignaux.innerHTML = signaux.length
+      ? signaux.map(([niv, msg]) => `<div class="signal"><span class="badge ${NIVEAUX[niv].badge}">${NIVEAUX[niv].texte}</span><span>${msg}</span></div>`).join('')
+      : '<p class="hint" style="margin:0">Rien d\'anormal repéré, ce qui ne garantit pas que le site soit sûr. Reste attentif à ce qu\'il te demande.</p>';
+
+    lienBouton.disabled = false;
+    lienBouton.textContent = 'Analyser';
   });
 
   /* ========== PWA ========== */
