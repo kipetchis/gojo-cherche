@@ -252,6 +252,7 @@
   <button data-tool="lien">🔗 Lien</button>
   <button data-tool="ip">🛰️ IP</button>
   <button data-tool="email">✉️ E-mail</button>
+  <button data-tool="empreinte">🛡️ Mon empreinte</button>
   <button data-tool="geo">🗺️ Où est-ce ?</button>
   <button data-tool="carnet">📒 Carnet</button>
   <button data-tool="pseudo">👤 Pseudo</button>
@@ -578,6 +579,74 @@
     </div>
   </section>
 
+  <section id="tool-empreinte" class="hidden">
+    <div class="card">
+      <h2>Mon empreinte</h2>
+      <p class="hint">Découvre ce qui a fuité sur toi et ce qu'on trouve en te cherchant, puis fais-le retirer. Cet outil est fait pour <strong>toi</strong> : rien n'est enregistré.</p>
+    </div>
+
+    <div class="card">
+      <h2>🔑 Mon mot de passe a-t-il fuité ?</h2>
+      <p class="hint">Vérifie s'il apparaît dans les fuites connues (plus de 900 millions de mots de passe). <strong>Il ne quitte jamais ton téléphone</strong> : seuls les 5 premiers caractères d'une empreinte chiffrée sont envoyés, impossible d'en retrouver le mot de passe.</p>
+      <form id="mdpForm" class="ligne-form" autocomplete="off">
+        <input type="password" id="mdpInput" placeholder="Mot de passe à tester" autocomplete="new-password">
+        <button type="submit" id="mdpBouton">Tester</button>
+      </form>
+      <div id="mdpResultat" style="margin-top:10px"></div>
+    </div>
+
+    <div class="card">
+      <h2>📧 Mes adresses et mon numéro</h2>
+      <p class="hint">Have I Been Pwned recense les fuites de centaines de sites piratés. Il accepte aussi les numéros de téléphone (fuite Facebook notamment).</p>
+      <form id="fuiteForm" class="ligne-form">
+        <input type="text" id="fuiteInput" placeholder="Ton e-mail ou ton numéro (06…)" autocomplete="off" autocapitalize="off" spellcheck="false">
+        <button type="submit">Préparer</button>
+      </form>
+      <p id="fuiteInfo" class="hint" style="margin:10px 0 0"></p>
+      <div class="moteurs" style="margin-top:10px">
+        <a href="https://haveibeenpwned.com/" target="_blank" rel="noopener">Have I Been Pwned<small>e-mail ou téléphone</small></a>
+        <a href="https://monitor.mozilla.org/" target="_blank" rel="noopener">Mozilla Monitor<small>alertes en français</small></a>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>🚨 Si quelque chose a fuité</h2>
+      <ul class="conseils">
+        <li><strong>Change le mot de passe concerné</strong> partout où tu l'utilises, et n'en réutilise plus jamais un.</li>
+        <li><strong>Utilise un gestionnaire de mots de passe</strong> (Bitwarden est gratuit) : un mot de passe unique et solide par site, sans rien retenir.</li>
+        <li><strong>Active la double authentification</strong> sur ta boîte mail en priorité : c'est elle qui permet de réinitialiser tout le reste.</li>
+        <li><strong>Méfie-toi des messages trop bien renseignés</strong> : ton SMS « colis » avec ton nom et ton code postal venait très probablement d'une fuite. Les arnaqueurs s'en servent pour paraître crédibles.</li>
+        <li>Besoin d'aide ? <a href="https://www.cybermalveillance.gouv.fr/" target="_blank" rel="noopener">cybermalveillance.gouv.fr</a> (service public gratuit).</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h2>🔎 Ce qu'on trouve en me cherchant</h2>
+      <p class="hint">Les recherches qu'un inconnu ferait sur toi, prêtes à lancer.</p>
+      <form id="empForm">
+        <input type="text" id="empNom" class="champ" placeholder="Ton prénom et ton nom" autocomplete="off">
+        <input type="text" id="empVille" class="champ" placeholder="Ta ville (facultatif)" autocomplete="off">
+        <input type="text" id="empPseudo" class="champ" placeholder="Ton pseudo (facultatif)" autocomplete="off" autocapitalize="off">
+        <input type="text" id="empMail" class="champ" placeholder="Ton e-mail (facultatif)" autocomplete="off" autocapitalize="off">
+        <button type="submit" class="bouton-sec" style="width:100%">Préparer les recherches</button>
+      </form>
+      <div id="empLiens" class="moteurs" style="margin-top:12px"></div>
+      <p class="hint" style="margin:10px 0 0">Pense aussi à passer ta photo de profil dans l'outil <strong>Image inversée</strong> : elle peut révéler des comptes oubliés.</p>
+    </div>
+
+    <div class="card">
+      <h2>🧹 Faire retirer mes données</h2>
+      <div class="summary">
+        <div class="row"><span>Résultats Google avec ton adresse ou ton téléphone</span><span><a href="https://myactivity.google.com/results-about-you" target="_blank" rel="noopener">Résultats vous concernant</a></span></div>
+        <div class="row"><span>Faire disparaître une page de Google (RGPD)</span><span><a href="https://reportcontent.google.com/forms/rtbf" target="_blank" rel="noopener">Droit au déréférencement</a></span></div>
+        <div class="row"><span>Demander à un site d'effacer tes données</span><span><a href="https://www.cnil.fr/fr/modeles/courrier" target="_blank" rel="noopener">Modèles de courrier CNIL</a></span></div>
+        <div class="row"><span>Le site ne répond pas sous 1 mois</span><span><a href="https://www.cnil.fr/fr/plaintes" target="_blank" rel="noopener">Plainte à la CNIL</a></span></div>
+        <div class="row"><span>Stopper le démarchage téléphonique</span><span><a href="https://www.bloctel.gouv.fr/" target="_blank" rel="noopener">Bloctel</a></span></div>
+        <div class="row"><span>Retirer ton numéro des annuaires</span><span>Demande la « liste rouge » à ton opérateur (gratuit)</span></div>
+      </div>
+    </div>
+  </section>
+
   <section id="tool-pseudo" class="hidden">
     <div class="card">
       <h2>Recherche de pseudo</h2>
@@ -649,7 +718,7 @@
   </section>
 </main>
 
-<footer>À utiliser de façon responsable — respecte la vie privée des personnes.<br><small>version 12 · Carnet d'enquête</small></footer>
+<footer>À utiliser de façon responsable — respecte la vie privée des personnes.<br><small>version 13 · Mon empreinte</small></footer>
 
 <script>
   const dropzone = document.getElementById('dropzone');
@@ -2396,6 +2465,87 @@ ${blocs.join('\n') || '<p>Aucune trouvaille.</p>'}
   });
 
   document.querySelector('nav button[data-tool="carnet"]').addEventListener('click', afficherCarnet);
+
+  /* ========== Outil Mon empreinte ========== */
+  const mdpForm = document.getElementById('mdpForm');
+  const mdpInput = document.getElementById('mdpInput');
+  const mdpBouton = document.getElementById('mdpBouton');
+  const mdpResultat = document.getElementById('mdpResultat');
+
+  async function sha1Hex(texte) {
+    const t = await crypto.subtle.digest('SHA-1', new TextEncoder().encode(texte));
+    return [...new Uint8Array(t)].map(b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
+  }
+
+  mdpForm.addEventListener('submit', async e => {
+    e.preventDefault();
+    const mdp = mdpInput.value;
+    mdpInput.value = '';
+    if (!mdp) return;
+    mdpBouton.disabled = true; mdpBouton.textContent = '…';
+    mdpResultat.innerHTML = '<p class="hint" style="margin:0">Vérification…</p>';
+    try {
+      const h = await sha1Hex(mdp);
+      const debut = h.slice(0, 5), fin = h.slice(5);
+      const r = await fetch('https://api.pwnedpasswords.com/range/' + debut, { headers: { 'Add-Padding': 'true' } });
+      if (!r.ok) throw new Error();
+      const ligneTrouvee = (await r.text()).split('\n').find(l => l.trim().startsWith(fin + ':'));
+      const nb = ligneTrouvee ? parseInt(ligneTrouvee.split(':')[1], 10) : 0;
+      if (nb > 0) {
+        mdpResultat.innerHTML = `<span class="badge danger">🚨 Fuité ${nb.toLocaleString('fr-FR')} fois</span>
+          <p class="hint" style="margin:8px 0 0">Ce mot de passe circule dans les listes des pirates : <strong>change-le partout où tu l'utilises</strong>. Les robots l'essaient automatiquement sur tous les sites.</p>`;
+      } else {
+        mdpResultat.innerHTML = `<span class="badge ok">✔️ Absent des fuites connues</span>
+          <p class="hint" style="margin:8px 0 0">Bonne nouvelle, mais ça ne prouve pas qu'il est solide : un mot de passe court ou un mot du dictionnaire se devine quand même.</p>`;
+      }
+    } catch (_) {
+      mdpResultat.innerHTML = '<p class="erreur" style="margin:0">Service de vérification indisponible pour le moment.</p>';
+    }
+    mdpBouton.disabled = false; mdpBouton.textContent = 'Tester';
+  });
+
+  // E-mail / téléphone pour Have I Been Pwned
+  document.getElementById('fuiteForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const info = document.getElementById('fuiteInfo');
+    let v = document.getElementById('fuiteInput').value.trim();
+    if (!v) return;
+    if (!v.includes('@')) {
+      const chiffres = v.replace(/[^\d+]/g, '');
+      if (/^0[1-9]\d{8}$/.test(chiffres)) v = '+33' + chiffres.slice(1);
+      else if (/^\+?\d{8,15}$/.test(chiffres)) v = chiffres.startsWith('+') ? chiffres : '+' + chiffres;
+      else { info.innerHTML = '<span class="erreur">Entre une adresse e-mail ou un numéro de téléphone.</span>'; return; }
+    }
+    let copie = false;
+    try { await navigator.clipboard.writeText(v); copie = true; } catch (_) {}
+    info.innerHTML = copie
+      ? `<strong>${esc(v)}</strong> est copié : ouvre Have I Been Pwned et colle-le dans la recherche.`
+      : `Copie <strong>${esc(v)}</strong> et colle-le dans la recherche de Have I Been Pwned.`;
+  });
+
+  // Recherches sur soi-même
+  document.getElementById('empForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const nom = document.getElementById('empNom').value.trim();
+    const ville = document.getElementById('empVille').value.trim();
+    const pseudo = document.getElementById('empPseudo').value.trim();
+    const mail = document.getElementById('empMail').value.trim();
+    const g = q => 'https://www.google.com/search?q=' + encodeURIComponent(q);
+    const liens = [];
+    if (nom) {
+      liens.push(['Nom exact', `"${nom}"`, g(`"${nom}"`)]);
+      if (ville) liens.push(['Nom + ville', `"${nom}" ${ville}`, g(`"${nom}" "${ville}"`)]);
+      liens.push(['Documents PDF', 'fichiers publics', g(`"${nom}" filetype:pdf`)]);
+      liens.push(['Réseaux sociaux', 'Facebook, LinkedIn, Instagram…', g(`"${nom}" (site:facebook.com OR site:linkedin.com OR site:instagram.com OR site:tiktok.com)`)]);
+      liens.push(['Annuaires', 'pages blanches & co', g(`"${nom}" (annuaire OR "pages blanches" OR adresse OR téléphone)`)]);
+      liens.push(['Images', 'photos associées', 'https://www.google.com/search?tbm=isch&q=' + encodeURIComponent(`"${nom}"`)]);
+    }
+    if (pseudo) liens.push(['Pseudo', `"${pseudo}"`, g(`"${pseudo}"`)]);
+    if (mail) liens.push(['E-mail affiché', 'publié quelque part ?', g(`"${mail}"`)]);
+    document.getElementById('empLiens').innerHTML = liens.length
+      ? liens.map(([t, d, u]) => `<a href="${u}" target="_blank" rel="noopener">${esc(t)}<small>${esc(d)}</small></a>`).join('')
+      : '<p class="hint" style="margin:0">Remplis au moins ton nom, ton pseudo ou ton e-mail.</p>';
+  });
 
   /* ========== PWA ========== */
   if ('serviceWorker' in navigator) {
